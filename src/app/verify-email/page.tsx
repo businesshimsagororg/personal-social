@@ -8,7 +8,7 @@ import { CheckCircle2, Loader2, Sparkles, XCircle } from "lucide-react";
 function VerifyEmailContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const token = searchParams.get("token");
+  const token = searchParams?.get("token") || null;
 
   const [loading, setLoading] = useState(true);
   const [success, setSuccess] = useState(false);

@@ -18,7 +18,7 @@ import {
 export default function ProfilePage() {
   const params = useParams();
   const router = useRouter();
-  const username = params.username as string;
+  const username = params?.username ? (params.username as string) : "";
 
   const [loading, setLoading] = useState(true);
   const [profileData, setProfileData] = useState<any>(null);

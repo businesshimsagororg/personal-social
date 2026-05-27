@@ -169,7 +169,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
         <nav className="space-y-1.5 flex-1">
           {navItems.map((item) => {
             const Icon = item.icon;
-            const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+            const isActive = pathname ? (pathname === item.href || pathname.startsWith(item.href + "/")) : false;
             return (
               <Link
                 key={item.name}
@@ -202,7 +202,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
             <Link
               href="/admin"
               className={`flex items-center gap-3.5 px-4 py-3 rounded-xl font-medium text-sm transition group mt-6 ${
-                pathname.startsWith("/admin")
+                pathname?.startsWith("/admin")
                   ? "bg-indigo-600 text-white shadow-[0_4px_15px_rgba(79,70,229,0.25)]"
                   : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
               }`}
@@ -303,7 +303,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
             <nav className="space-y-2">
               {navItems.map((item) => {
                 const Icon = item.icon;
-                const isActive = pathname === item.href;
+                const isActive = pathname ? (pathname === item.href) : false;
                 return (
                   <Link
                     key={item.name}
@@ -331,7 +331,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
                   href="/admin"
                   onClick={() => setMobileMenuOpen(false)}
                   className={`flex items-center gap-4 px-4 py-3.5 rounded-xl font-semibold text-base transition mt-4 ${
-                    pathname.startsWith("/admin") ? "bg-indigo-600 text-white" : "text-muted-foreground hover:bg-muted"
+                    pathname?.startsWith("/admin") ? "bg-indigo-600 text-white" : "text-muted-foreground hover:bg-muted"
                   }`}
                 >
                   <Shield className="h-5 w-5" />
@@ -386,7 +386,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
       <nav className="md:hidden flex items-center justify-around py-3 glass border-t border-border sticky bottom-0 z-30">
         {navItems.slice(0, 4).map((item) => {
           const Icon = item.icon;
-          const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+          const isActive = pathname ? (pathname === item.href || pathname.startsWith(item.href + "/")) : false;
           return (
             <Link
               key={item.name}

@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { ArrowLeft, Loader2, ShieldAlert } from "lucide-react";
 import MessageInput from "./message-input";
+import Image from "next/image";
 
 interface Participant {
   userId: string;
@@ -48,57 +49,11 @@ export default function ChatView({ conversationId, currentUserId, onBack }: Chat
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const isInitialLoad = useRef(true);
 
-  // Mark conversation as read
-  const markAsRead = async () => {
-    try {
-      await fetch(`/api/conversations/${conversationId}/read`, { method: "PUT" });
-    } catch (e) {
-      console.error("Failed to mark conversation as read", e);
-    }
-  };
 
-  // Fetch conversation metadata (to get participant info)
-  const fetchConvoDetails = async () => {
-    try {
-      const res = await fetch(`/api/conversations/${conversationId}`);
-      if (res.ok) {
-        const data = await res.json();
-        const convo = data.conversation;
-        if (convo) {
-          const other = convo.participants.find((p: Participant) => p.userId !== currentUserId)?.user;
-          setOtherUser(other || null);
-        }
-      }
-    } catch (e) {
-      console.error("Failed to fetch conversation details", e);
-    }
-  };
 
-  // Fetch messages
-  const fetchMessages = async (silent = false) => {
-    if (!silent) setLoading(true);
-    try {
-      const res = await fetch(`/api/conversations/${conversationId}/messages?limit=50`);
-      if (res.ok) {
-        const data = await res.json();
-        const reversed = [...data.messages].reverse(); // API returns newest first, we display oldest first
-        setMessages(reversed);
-        if (isInitialLoad.current) {
-          setTimeout(() => {
-            messagesEndRef.current?.scrollIntoView({ behavior: "instant" });
-          }, 50);
-          isInitialLoad.current = false;
-        } else {
-          // Check if scroll is near bottom, if so scroll to bottom
-          messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-        }
-      }
-    } catch (e) {
-      console.error("Failed to load messages", e);
-    } finally {
-      if (!silent) setLoading(false);
-    }
-  };
+
+
+
 
   // Poll for messages and mark read
   // Fetch conversation details
