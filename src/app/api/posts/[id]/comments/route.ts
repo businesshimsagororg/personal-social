@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
 import { commentCreateSchema } from "@/lib/validations";
 
-export async function POST(req: NextRequest, context: { params: Promise<{ id: string }> }) {
+export async function POST(req: NextRequest, context: any) {
   try {
     const { id: postId } = await context.params;
     const user = await getSessionUser();
@@ -96,7 +96,7 @@ export async function POST(req: NextRequest, context: { params: Promise<{ id: st
   }
 }
 
-export async function GET(req: NextRequest, context: { params: Promise<{ id: string }> }) {
+export async function GET(req: NextRequest, context: any) {
   try {
     const { id: postId } = await context.params;
     const user = await getSessionUser();
