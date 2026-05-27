@@ -3,9 +3,9 @@ import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
 import { commentCreateSchema } from "@/lib/validations";
 
-export async function POST(req: NextRequest, context: any) {
+export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const { id: postId } = await context.params;
+    const { id: postId } = params;
     const user = await getSessionUser();
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -96,9 +96,9 @@ export async function POST(req: NextRequest, context: any) {
   }
 }
 
-export async function GET(req: NextRequest, context: any) {
+export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const { id: postId } = await context.params;
+    const { id: postId } = params;
     const user = await getSessionUser();
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

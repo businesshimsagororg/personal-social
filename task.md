@@ -1,0 +1,22 @@
+- [ ] Install new dependencies (sharp, uploadthing, upstash-redis, pusher, sanitize-html, csurf, @tanstack/react-query, next-seo, react-infinite-scroll-component)
+- [ ] Update `next.config.ts` for external image loader and edge middleware
+- [ ] Extend `prisma/schema.prisma` with Media, Report, Notification models and indexes
+- [ ] Create `lib/uploadProvider.ts` abstraction
+- [ ] Add API route `app/api/upload/route.ts` for file uploads
+- [ ] Add `components/UploadDropzone.tsx`
+- [ ] Modify post creation UI to include Dropzone
+- [ ] Create feed API `app/api/feed/route.ts` with cursor pagination
+- [ ] Add `components/Feed.tsx` and hook `hooks/useFeed.ts`
+- [ ] Add Redis client `lib/redis.ts` and middleware `middleware/rateLimiter.ts`
+- [ ] Set up Pusher lib `lib/pusher.ts` and notifications API `app/api/notifications/route.ts`
+- [ ] Implement push notifications integration (OneSignal stub)
+- [ ] Create search API `app/api/search/route.ts` and UI components
+- [ ] Add security middleware `middleware/security.ts`
+- [ ] Add reporting API `app/api/report/route.ts` and admin UI placeholder
+- [ ] Update Tailwind config for dark mode and theme palette
+- [ ] Add skeleton loaders and toast component
+- [ ] Update `app/layout.tsx` with next-seo and meta tags
+- [ ] Create `.env.example` with required variables
+- [ ] Update `vercel.json` for edge functions and rewrites
+- [ ] Generate production architecture diagram (image)
+- [ ] Write documentation and deployment instructions

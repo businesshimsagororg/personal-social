@@ -89,6 +89,7 @@ model User {
   passwordResetExpires DateTime?
   createdAt            DateTime          @default(now())
   updatedAt            DateTime          @updatedAt
+  pushToken            String?           // OneSignal player ID for web push
 
   // Profile relationship
   profile              Profile?
@@ -127,7 +128,8 @@ model User {
   reportsAgainst       Report[]          @relation("ReportedUser")
 
   // Audit Logs
-  auditLogs            AuditLog[]
+  media      Media[]    @relation("UserMedia")
+  auditLogs AuditLog[] @relation("UserAuditLogs")
 
   @@index([email])
   @@index([username])
@@ -180,7 +182,7 @@ model Post {
   authorId   String
   author     User           @relation("PostAuthor", fields: [authorId], references: [id], onDelete: Cascade)
   content    String
-  mediaUrls  String[]       @default([])
+  media      Media[]    @relation("PostMedia")
   visibility PostVisibility @default(PUBLIC)
   createdAt  DateTime       @default(now())
   updatedAt  DateTime       @updatedAt
@@ -374,7 +376,7 @@ model Notification {
 model AuditLog {
   id        String   @id @default(uuid())
   userId    String?
-  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  user      User?    @relation("UserAuditLogs", fields: [userId], references: [id], onDelete: SetNull)
   action    String   // e.g. "BAN_USER", "DELETE_POST", "LOGIN_FAIL"
   metadata  String?  // JSON string
   ipAddress String?
@@ -383,3 +385,24 @@ model AuditLog {
   @@index([userId])
   @@index([action])
 }
+enum MediaType {
+  IMAGE
+  VIDEO
+  OTHER
+}
+
+model Media {
+  id        String     @id @default(uuid())
+  url       String
+  type      MediaType
+  size      Int        // size in bytes
+  postId    String?
+  post      Post?      @relation("PostMedia", fields: [postId], references: [id], onDelete: SetNull)
+  userId    String?
+  user      User?      @relation("UserMedia", fields: [userId], references: [id], onDelete: SetNull)
+  createdAt DateTime   @default(now())
+
+  @@index([postId])
+  @@index([userId])
+}
+
