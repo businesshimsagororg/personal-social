@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { Search, Plus } from "lucide-react";
+import Image from "next/image";
 
 interface Participant {
   userId: string;
@@ -144,9 +145,11 @@ export default function ConversationList({
                   isActive ? "bg-primary/25 border-primary/45 text-primary" : "bg-primary/10 border-primary/20 text-primary"
                 }`}>
                   {avatarUrl ? (
-                    <img
+                    <Image
                       src={avatarUrl}
                       alt={title}
+                      width={40}
+                      height={40}
                       className="h-full w-full object-cover rounded-xl"
                     />
                   ) : (

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { Search, X, Loader2 } from "lucide-react";
+import Image from "next/image";
 
 interface UserResult {
   id: string;
@@ -29,37 +30,33 @@ export default function NewConversationModal({
   const [submitting, setSubmitting] = useState(false);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  useEffect(() => {
-    if (!searchQuery.trim()) {
-      setResults([]);
-      return;
-    }
+  // Debounced fetch when query is non‑empty
+useEffect(() => {
+  if (!searchQuery.trim()) return; // nothing to fetch
 
-    if (searchTimeoutRef.current) {
-      clearTimeout(searchTimeoutRef.current);
-    }
+  if (searchTimeoutRef.current) {
+    clearTimeout(searchTimeoutRef.current);
+  }
 
-    setLoading(true);
-    searchTimeoutRef.current = setTimeout(async () => {
-      try {
-        const res = await fetch(`/api/users/search?q=${encodeURIComponent(searchQuery)}`);
-        if (res.ok) {
-          const data = await res.json();
-          setResults(data.users || []);
-        }
-      } catch (err) {
-        console.error("Error searching users", err);
-      } finally {
-        setLoading(false);
+  setLoading(true);
+  searchTimeoutRef.current = setTimeout(async () => {
+    try {
+      const res = await fetch(`/api/users/search?q=${encodeURIComponent(searchQuery)}`);
+      if (res.ok) {
+        const data = await res.json();
+        setResults(data.users || []);
       }
-    }, 400);
+    } catch (err) {
+      console.error('Error searching users', err);
+    } finally {
+      setLoading(false);
+    }
+  }, 400);
 
-    return () => {
-      if (searchTimeoutRef.current) {
-        clearTimeout(searchTimeoutRef.current);
-      }
-    };
-  }, [searchQuery]);
+  return () => {
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+  };
+}, [searchQuery]);
 
   const handleStartChat = async (userId: string) => {
     setSubmitting(true);
@@ -139,10 +136,12 @@ export default function NewConversationModal({
                 >
                   <div className="h-10 w-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-bold shrink-0 shadow-inner">
                     {user.profile?.avatarUrl ? (
-                      <img
+                      <Image
                         src={user.profile.avatarUrl}
                         alt={user.username}
                         className="h-full w-full object-cover rounded-xl"
+                        width={40}
+                        height={40}
                       />
                     ) : (
                       initials

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Image from "next/image";
 import {
   Heart,
   MessageCircle,
@@ -179,9 +180,11 @@ export default function PostCard({ post, currentUserId }: PostCardProps) {
     <div className={`flex gap-3 text-sm ${isReply ? "pl-6 mt-3 border-l-2 border-border/40" : "mt-4"}`}>
       <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center font-bold text-primary shrink-0 text-xs">
         {comment.author.profile?.avatarUrl ? (
-          <img
+          <Image
             src={comment.author.profile.avatarUrl}
             alt={comment.author.username}
+            width={32}
+            height={32}
             className="h-full w-full object-cover rounded-lg"
           />
         ) : (
@@ -256,9 +259,11 @@ export default function PostCard({ post, currentUserId }: PostCardProps) {
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center font-bold text-primary shrink-0 border border-primary/20 shadow-inner">
             {post.author.profile?.avatarUrl ? (
-              <img
+              <Image
                 src={post.author.profile.avatarUrl}
                 alt={post.author.username}
+                width={40}
+                height={40}
                 className="h-full w-full object-cover rounded-xl"
               />
             ) : (
@@ -310,9 +315,11 @@ export default function PostCard({ post, currentUserId }: PostCardProps) {
         {/* Media Attachments */}
         {post.mediaUrls.length > 0 && (
           <div className="rounded-2xl overflow-hidden border border-border max-h-[400px]">
-            <img
+            <Image
               src={post.mediaUrls[0]}
               alt="Post attachment"
+              width={800}
+              height={450}
               className="w-full h-full object-cover"
             />
           </div>

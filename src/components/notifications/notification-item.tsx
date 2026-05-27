@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Image from "next/image";
 import { Heart, MessageCircle, UserPlus, AtSign, Mail, UserCheck } from "lucide-react";
 
 interface Actor {
@@ -123,9 +124,11 @@ export default function NotificationItem({ notification, onClick }: Notification
       {/* Actor Avatar */}
       <div className="h-10 w-10 rounded-xl bg-primary/15 border border-primary/20 flex items-center justify-center text-primary font-bold shrink-0 shadow-inner">
         {notification.actor.profile?.avatarUrl ? (
-          <img
+          <Image
             src={notification.actor.profile.avatarUrl}
             alt={notification.actor.username}
+            width={40}
+            height={40}
             className="h-full w-full object-cover rounded-xl"
           />
         ) : (

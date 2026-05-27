@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useTheme } from "@/components/theme-provider";
+import Image from "next/image";
 import {
   Bell,
   Home,
@@ -238,9 +239,11 @@ export default function AppLayout({ children }: AppLayoutProps) {
               <div className="flex items-center gap-2.5 overflow-hidden">
                 <div className="h-10 w-10 rounded-xl bg-primary/15 border border-primary/20 flex items-center justify-center text-primary font-bold shrink-0 shadow-inner">
                   {currentUser.profile?.avatarUrl ? (
-                    <img
+                    <Image
                       src={currentUser.profile.avatarUrl}
                       alt={currentUser.username}
+                      width={40}
+                      height={40}
                       className="h-full w-full object-cover rounded-xl"
                     />
                   ) : (
@@ -343,9 +346,11 @@ export default function AppLayout({ children }: AppLayoutProps) {
               <div className="flex items-center gap-3">
                 <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-bold">
                   {currentUser.profile?.avatarUrl ? (
-                    <img
+                    <Image
                       src={currentUser.profile.avatarUrl}
                       alt={currentUser.username}
+                      width={40}
+                      height={40}
                       className="h-full w-full object-cover rounded-xl"
                     />
                   ) : (

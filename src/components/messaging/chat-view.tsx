@@ -101,19 +101,70 @@ export default function ChatView({ conversationId, currentUserId, onBack }: Chat
   };
 
   // Poll for messages and mark read
-  useEffect(() => {
-    isInitialLoad.current = true;
-    fetchConvoDetails();
-    fetchMessages();
+  // Fetch conversation details
+const fetchConvoDetails = useCallback(async () => {
+  try {
+    const res = await fetch(`/api/conversations/${conversationId}`);
+    if (res.ok) {
+      const data = await res.json();
+      const convo = data.conversation;
+      if (convo) {
+        const other = convo.participants.find((p: Participant) => p.userId !== currentUserId)?.user;
+        setOtherUser(other || null);
+      }
+    }
+  } catch (e) {
+    console.error("Failed to fetch conversation details", e);
+  }
+}, [conversationId, currentUserId]);
+
+// Fetch messages
+const fetchMessages = useCallback(async (silent = false) => {
+  if (!silent) setLoading(true);
+  try {
+    const res = await fetch(`/api/conversations/${conversationId}/messages?limit=50`);
+    if (res.ok) {
+      const data = await res.json();
+      const reversed = [...data.messages].reverse();
+      setMessages(reversed);
+      if (isInitialLoad.current) {
+        setTimeout(() => {
+          messagesEndRef.current?.scrollIntoView({ behavior: "instant" });
+        }, 50);
+        isInitialLoad.current = false;
+      } else {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      }
+    }
+  } catch (e) {
+    console.error("Failed to load messages", e);
+  } finally {
+    if (!silent) setLoading(false);
+  }
+}, [conversationId]);
+
+// Mark as read
+const markAsRead = useCallback(async () => {
+  try {
+    await fetch(`/api/conversations/${conversationId}/read`, { method: "PUT" });
+  } catch (e) {
+    console.error("Failed to mark conversation as read", e);
+  }
+}, [conversationId]);
+
+useEffect(() => {
+  isInitialLoad.current = true;
+  fetchConvoDetails();
+  fetchMessages();
+  markAsRead();
+
+  const interval = setInterval(() => {
+    fetchMessages(true);
     markAsRead();
+  }, 3000);
 
-    const interval = setInterval(() => {
-      fetchMessages(true);
-      markAsRead();
-    }, 3000);
-
-    return () => clearInterval(interval);
-  }, [conversationId]);
+  return () => clearInterval(interval);
+}, [fetchConvoDetails, fetchMessages, markAsRead]);
 
   // Send message
   const handleSendMessage = async (content: string) => {
@@ -200,9 +251,11 @@ export default function ChatView({ conversationId, currentUserId, onBack }: Chat
           <div className="flex items-center gap-3 overflow-hidden">
             <div className="h-10 w-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-bold shrink-0 shadow-inner">
               {otherUser.profile?.avatarUrl ? (
-                <img
+                <Image
                   src={otherUser.profile.avatarUrl}
                   alt={otherUser.username}
+                  width={40}
+                  height={40}
                   className="h-full w-full object-cover rounded-xl"
                 />
               ) : (
