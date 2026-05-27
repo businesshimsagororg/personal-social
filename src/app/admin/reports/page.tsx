@@ -1,3 +1,5 @@
+
+"use client";
 import React, { useEffect, useState } from 'react';
 import AdminLayout from '@/app/admin/layout';
 import { ShieldAlert } from 'lucide-react';

@@ -2,10 +2,7 @@ import React from 'react';
 import AppLayout from '@/components/layout/app-layout';
 import AdminSidebar from '@/components/admin/AdminSidebar';
 
-export const metadata = {
-  title: 'Admin Panel',
-  description: 'Administration dashboard',
-};
+
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
