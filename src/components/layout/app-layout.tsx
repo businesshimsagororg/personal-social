@@ -32,7 +32,8 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [notificationsCount, setNotificationsCount] = useState(3); // Mock count for Phase 1/2
+  const [notificationsCount, setNotificationsCount] = useState(0);
+  const [messagesCount, setMessagesCount] = useState(0);
 
   useEffect(() => {
     // Fetch current user details
@@ -52,6 +53,34 @@ export default function AppLayout({ children }: AppLayoutProps) {
     };
     fetchUser();
   }, [router]);
+
+  // Fetch unread notification and message counts
+  const fetchCounts = async () => {
+    try {
+      const [notifRes, msgRes] = await Promise.all([
+        fetch("/api/notifications?unreadCount=true"),
+        fetch("/api/conversations?unreadCount=true") // or query conversations endpoint
+      ]);
+      if (notifRes.ok) {
+        const notifData = await notifRes.json();
+        setNotificationsCount(notifData.unreadCount || 0);
+      }
+      if (msgRes.ok) {
+        const msgData = await msgRes.json();
+        setMessagesCount(msgData.unreadCount || 0);
+      }
+    } catch (e) {
+      console.error("Failed to fetch counts", e);
+    }
+  };
+
+  useEffect(() => {
+    if (!currentUser) return;
+    fetchCounts();
+    // Smart poll every 30s
+    const interval = setInterval(fetchCounts, 30000);
+    return () => clearInterval(interval);
+  }, [currentUser]);
 
   const handleLogout = async () => {
     try {
@@ -74,7 +103,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
   const navItems = [
     { name: "Home Feed", href: "/feed", icon: Home },
-    { name: "Messages", href: "/messages", icon: Mail, badge: 2 },
+    { name: "Messages", href: "/messages", icon: Mail, badge: messagesCount },
     { name: "Notifications", href: "/notifications", icon: Bell, badge: notificationsCount },
     { name: "My Profile", href: currentUser ? `/profile/${currentUser.username}` : "#", icon: User },
     { name: "Settings", href: "/settings", icon: Settings },
