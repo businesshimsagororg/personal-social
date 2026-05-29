@@ -5,7 +5,7 @@ import AppLayout from "@/components/layout/app-layout";
 import ConversationList from "@/components/messaging/conversation-list";
 import ChatView from "@/components/messaging/chat-view";
 import NewConversationModal from "@/components/messaging/new-conversation-modal";
-import { MessageSquare, Mail, Sparkles } from "lucide-react";
+import { MessageSquare, Mail } from "lucide-react";
 
 export default function MessagesPage() {
   const [conversations, setConversations] = useState<any[]>([]);
@@ -14,7 +14,6 @@ export default function MessagesPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // Fetch current user details
   const fetchUser = async () => {
     try {
       const res = await fetch("/api/auth/me");
@@ -27,14 +26,14 @@ export default function MessagesPage() {
     }
   };
 
-  // Fetch conversations list
   const fetchConversations = async (silent = false) => {
     if (!silent) setLoading(true);
     try {
       const res = await fetch("/api/conversations");
       if (res.ok) {
         const data = await res.json();
-        setConversations(data.conversations || []);
+        const list = Array.isArray(data) ? data : data.conversations ?? [];
+        setConversations(list);
       }
     } catch (e) {
       console.error("Failed to load conversations", e);
@@ -47,7 +46,6 @@ export default function MessagesPage() {
     fetchUser();
     fetchConversations();
 
-    // 10s poll for conversations list
     const interval = setInterval(() => {
       fetchConversations(true);
     }, 10000);
@@ -60,14 +58,16 @@ export default function MessagesPage() {
     fetchConversations(true);
   };
 
-  // Check if we show the detail view on mobile
   const showChatOnMobile = activeId !== null;
 
   return (
-    <AppLayout>
-      <div className="space-y-6">
-        {/* Welcome Header */}
-        <div className="flex items-center gap-3 mb-4 px-1">
+    <AppLayout fullHeight>
+      <div className="flex flex-col flex-1 min-h-0 gap-4 md:gap-6">
+        <div
+          className={`flex items-center gap-3 px-1 shrink-0 ${
+            showChatOnMobile ? "hidden md:flex" : "flex"
+          }`}
+        >
           <div className="p-2.5 rounded-2xl bg-primary/10 border border-primary/20 text-primary">
             <Mail className="h-6 w-6" />
           </div>
@@ -77,11 +77,9 @@ export default function MessagesPage() {
           </div>
         </div>
 
-        {/* Messaging Pane Container */}
-        <div className="glass rounded-3xl border border-border/80 shadow-2xl overflow-hidden h-[600px] flex">
-          {/* Conversation List Pane */}
+        <div className="glass rounded-3xl border border-border/80 shadow-2xl overflow-hidden flex flex-1 min-h-[min(70dvh,600px)] md:min-h-[600px] flex-col md:flex-row">
           <div
-            className={`w-full md:w-80 border-r border-border/50 h-full flex flex-col transition-all duration-300 shrink-0 ${
+            className={`w-full md:w-80 border-r border-border/50 h-full flex flex-col transition-all duration-300 shrink-0 min-h-0 ${
               showChatOnMobile ? "hidden md:flex" : "flex"
             }`}
           >
@@ -109,9 +107,8 @@ export default function MessagesPage() {
             )}
           </div>
 
-          {/* Active Chat Pane */}
           <div
-            className={`flex-1 h-full flex flex-col ${
+            className={`flex-1 min-h-0 flex flex-col ${
               showChatOnMobile ? "flex" : "hidden md:flex"
             }`}
           >
@@ -141,7 +138,6 @@ export default function MessagesPage() {
           </div>
         </div>
 
-        {/* Modal */}
         <NewConversationModal
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}

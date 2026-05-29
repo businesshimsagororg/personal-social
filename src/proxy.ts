@@ -3,10 +3,7 @@ import type { NextRequest } from "next/server";
 import { jwtVerify } from "jose";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { withSecurityHeaders } from "@/lib/security-headers";
-
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || "super-secret-random-key-32-chars-at-least-1234-abcd"
-);
+import { getJwtSecret } from "@/lib/jwt-secret";
 
 export default async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
@@ -35,7 +32,7 @@ export default async function proxy(req: NextRequest) {
 
   if (token) {
     try {
-      const { payload } = await jwtVerify(token, JWT_SECRET);
+      const { payload } = await jwtVerify(token, getJwtSecret());
       userPayload = payload as { userId: string; email: string; role: string };
     } catch (e) {
       // Token is invalid/expired
@@ -85,6 +82,6 @@ export const config = {
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      */
-    "/((?!api/auth|_next/static|_next/image|favicon.ico).*)",
+    "/((?!_next/static|_next/image|favicon.ico).*)",
   ],
 };

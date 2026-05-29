@@ -7,6 +7,8 @@ import { useTheme } from "@/components/theme-provider";
 import Image from "next/image";
 import {
   Bell,
+  Bookmark,
+  Compass,
   Home,
   LogOut,
   Mail,
@@ -25,9 +27,11 @@ interface AppLayoutProps {
   children: React.ReactNode;
   /** Use full width for admin and other data-heavy views */
   wide?: boolean;
+  /** Fill viewport height (messages) with minimal vertical padding */
+  fullHeight?: boolean;
 }
 
-export default function AppLayout({ children, wide = false }: AppLayoutProps) {
+export default function AppLayout({ children, wide = false, fullHeight = false }: AppLayoutProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { theme, toggleTheme } = useTheme();
@@ -52,10 +56,20 @@ export default function AppLayout({ children, wide = false }: AppLayoutProps) {
         }
       } catch (err) {
         console.error("Error fetching user session", err);
+        router.push("/login");
       }
     };
     fetchUser();
   }, [router]);
+
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [mobileMenuOpen]);
 
   // Fetch unread notification and message counts
   const fetchCounts = async () => {
@@ -106,13 +120,19 @@ export default function AppLayout({ children, wide = false }: AppLayoutProps) {
 
   const navItems = [
     { name: "Home Feed", href: "/feed", icon: Home },
+    { name: "Explore", href: "/explore", icon: Compass },
     { name: "Messages", href: "/messages", icon: Mail, badge: messagesCount },
     { name: "Notifications", href: "/notifications", icon: Bell, badge: notificationsCount },
+    { name: "Saved", href: "/saved", icon: Bookmark },
     { name: "My Profile", href: currentUser ? `/profile/${currentUser.username}` : "#", icon: User },
     { name: "Settings", href: "/settings", icon: Settings },
   ];
 
   const isAdmin = currentUser?.role === "ADMIN" || currentUser?.role === "MODERATOR";
+  const isMessagesActive = pathname?.startsWith("/messages") ?? false;
+
+  const headerIconClass =
+    "relative flex items-center justify-center min-h-11 min-w-11 p-2.5 rounded-xl bg-muted/50 hover:bg-muted text-foreground transition";
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-background">
@@ -121,23 +141,42 @@ export default function AppLayout({ children, wide = false }: AppLayoutProps) {
       <div className="absolute bottom-0 left-0 w-[30%] h-[30%] rounded-full glow-overlay-secondary filter blur-[120px] pointer-events-none opacity-40"></div>
 
       {/* Mobile Top Header */}
-      <header className="flex md:hidden items-center justify-between px-6 py-4 glass border-b border-border z-30 sticky top-0">
+      <header className="flex md:hidden items-center justify-between px-4 sm:px-6 py-3 pt-[max(0.75rem,env(safe-area-inset-top))] glass border-b border-border z-30 sticky top-0">
         <Link href="/feed" className="flex items-center gap-2 text-primary font-bold text-xl">
           <Sparkles className="h-6 w-6 text-primary shadow-[0_0_10px_rgba(139,92,246,0.3)] animate-pulse" />
           <span>Apex</span>
         </Link>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2">
+          <Link
+            href="/messages"
+            aria-label="Messages"
+            className={`${headerIconClass} ${
+              isMessagesActive ? "text-primary bg-primary/10 border border-primary/20" : ""
+            }`}
+          >
+            <Mail className="h-5 w-5" />
+            {messagesCount > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 h-5 min-w-[20px] px-1 bg-primary text-primary-foreground text-[10px] font-extrabold rounded-full flex items-center justify-center border-2 border-background">
+                {messagesCount > 99 ? "99+" : messagesCount}
+              </span>
+            )}
+          </Link>
+
           <button
+            type="button"
             onClick={toggleTheme}
-            className="p-2 rounded-xl bg-muted/50 hover:bg-muted text-foreground transition"
+            aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+            className={headerIconClass}
           >
             {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
           </button>
-          
+
           <button
+            type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="p-2 rounded-xl bg-muted/50 hover:bg-muted text-foreground transition"
+            aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+            className={headerIconClass}
           >
             {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
@@ -217,20 +256,38 @@ export default function AppLayout({ children, wide = false }: AppLayoutProps) {
 
         {/* Footer User Panel */}
         <div className="pt-6 border-t border-border mt-auto space-y-4">
-          <div className="flex items-center justify-between px-2">
+          <div className="grid grid-cols-2 gap-2 px-2">
+            <Link
+              href="/messages"
+              aria-label="Messages"
+              className={`relative p-2.5 rounded-xl flex items-center justify-center gap-2 border text-xs font-semibold transition min-h-11 ${
+                isMessagesActive
+                  ? "bg-primary/10 text-primary border-primary/20"
+                  : "bg-muted/40 hover:bg-muted text-foreground border-border/50"
+              }`}
+            >
+              <Mail className="h-4 w-4" />
+              <span>Messages</span>
+              {messagesCount > 0 && (
+                <span className="absolute -top-1 -right-1 h-5 min-w-[20px] px-1 bg-primary text-primary-foreground text-[10px] font-extrabold rounded-full flex items-center justify-center border-2 border-background">
+                  {messagesCount > 99 ? "99+" : messagesCount}
+                </span>
+              )}
+            </Link>
             <button
+              type="button"
               onClick={toggleTheme}
-              className="p-2.5 rounded-xl bg-muted/40 hover:bg-muted text-foreground transition w-full flex items-center justify-center gap-2 border border-border/50 text-xs font-semibold"
+              className="p-2.5 rounded-xl bg-muted/40 hover:bg-muted text-foreground transition flex items-center justify-center gap-2 border border-border/50 text-xs font-semibold min-h-11"
             >
               {theme === "dark" ? (
                 <>
-                  <Sun className="h-4 w-4 text-amber-400 animate-spin-slow" />
-                  <span>Light Mode</span>
+                  <Sun className="h-4 w-4 text-amber-400" />
+                  <span>Light</span>
                 </>
               ) : (
                 <>
                   <Moon className="h-4 w-4 text-indigo-400" />
-                  <span>Dark Mode</span>
+                  <span>Dark</span>
                 </>
               )}
             </button>
@@ -305,7 +362,9 @@ export default function AppLayout({ children, wide = false }: AppLayoutProps) {
             <nav className="space-y-2">
               {navItems.map((item) => {
                 const Icon = item.icon;
-                const isActive = pathname ? (pathname === item.href) : false;
+                const isActive = pathname
+                  ? pathname === item.href || pathname.startsWith(item.href + "/")
+                  : false;
                 return (
                   <Link
                     key={item.name}
@@ -378,18 +437,18 @@ export default function AppLayout({ children, wide = false }: AppLayoutProps) {
       )}
 
       {/* Main View Container */}
-      <main className="flex-1 w-full min-h-0 flex flex-col overflow-y-auto">
+      <main className="flex-1 w-full min-h-0 flex flex-col overflow-y-auto pb-[calc(env(safe-area-inset-bottom)+4.5rem)] md:pb-0">
         <div
-          className={`w-full mx-auto px-4 md:px-8 py-8 animate-fade-in ${
-            wide ? "max-w-[1600px]" : "max-w-4xl"
-          }`}
+          className={`w-full mx-auto px-4 md:px-8 animate-fade-in flex flex-col ${
+            fullHeight ? "flex-1 min-h-0 py-4 md:py-6" : "py-8"
+          } ${wide ? "max-w-[1600px]" : "max-w-4xl"}`}
         >
           {children}
         </div>
       </main>
 
       {/* Mobile Bottom Navigation (Quick Links) */}
-      <nav className="md:hidden flex items-center justify-around py-3 glass border-t border-border sticky bottom-0 z-30">
+      <nav className="md:hidden flex items-center justify-around py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] glass border-t border-border sticky bottom-0 z-30">
         {navItems.slice(0, 4).map((item) => {
           const Icon = item.icon;
           const isActive = pathname ? (pathname === item.href || pathname.startsWith(item.href + "/")) : false;
@@ -397,11 +456,12 @@ export default function AppLayout({ children, wide = false }: AppLayoutProps) {
             <Link
               key={item.name}
               href={item.href}
-              className={`relative p-2.5 rounded-xl transition ${
+              aria-label={item.name}
+              className={`relative flex items-center justify-center min-h-11 min-w-11 p-2.5 rounded-xl transition ${
                 isActive ? "text-primary bg-primary/10 border border-primary/20" : "text-muted-foreground"
               }`}
             >
-              <Icon className="h-5.5 w-5.5" />
+              <Icon className="h-6 w-6" />
               {item.badge && item.badge > 0 && (
                 <span className="absolute -top-1 -right-1 h-5 min-w-[20px] px-1 bg-primary text-primary-foreground text-[10px] font-extrabold rounded-full flex items-center justify-center border-2 border-background animate-pulse">
                   {item.badge}

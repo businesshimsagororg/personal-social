@@ -20,13 +20,13 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     return prefersLight ? "light" : "dark";
   });
 
-  // Sync DOM class whenever theme changes
   useEffect(() => {
     if (theme === "light") {
       document.documentElement.classList.add("light");
     } else {
       document.documentElement.classList.remove("light");
     }
+    document.documentElement.style.colorScheme = theme;
   }, [theme]);
 
   const toggleTheme = () => {
@@ -39,6 +39,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     } else {
       document.documentElement.classList.remove("light");
     }
+    document.documentElement.style.colorScheme = newTheme;
   };
 
   return (

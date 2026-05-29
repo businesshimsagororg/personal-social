@@ -40,7 +40,7 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 |----------|---------------------|---------|
 | `DATABASE_URL` | Yes (Production) | Supabase **transaction** pooler (`:6543`, `?pgbouncer=true`) |
 | `DIRECT_URL` | Yes (Production) | Supabase **session/direct** connection (`:5432`) for migrations |
-| `JWT_SECRET` | No | Session JWT signing |
+| `JWT_SECRET` | **Yes** (min 32 chars) | Session JWT signing — required; no default in production |
 | `NEXTAUTH_SECRET` | No | NextAuth session encryption |
 | `NEXTAUTH_URL` | No | Canonical site URL for NextAuth |
 | `NEXT_PUBLIC_APP_URL` | No | Links in verification/reset emails |

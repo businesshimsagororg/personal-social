@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
+import { canViewerAccessPost } from "@/lib/post-access";
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -16,6 +17,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
     if (!post) {
       return NextResponse.json({ error: "Post not found" }, { status: 404 });
+    }
+
+    if (!(await canViewerAccessPost(user.id, post))) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     // Toggle/Create like
@@ -61,6 +66,18 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
     const user = await getSessionUser();
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const post = await prisma.post.findUnique({
+      where: { id: postId },
+    });
+
+    if (!post) {
+      return NextResponse.json({ error: "Post not found" }, { status: 404 });
+    }
+
+    if (!(await canViewerAccessPost(user.id, post))) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     const existingLike = await prisma.like.findFirst({

@@ -25,9 +25,9 @@ export async function PUT(req: Request, { params }: { params: Promise<{ username
       );
     }
 
-    const { displayName, bio, website, location, privacySetting, avatarUrl } = result.data;
+    const { displayName, bio, website, location, privacySetting, avatarUrl, coverUrl } =
+      result.data;
 
-    // Update profile
     const updatedProfile = await prisma.profile.update({
       where: { userId: user.id },
       data: {
@@ -37,6 +37,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ username
         location,
         privacySetting,
         avatarUrl,
+        coverUrl,
       },
     });
 

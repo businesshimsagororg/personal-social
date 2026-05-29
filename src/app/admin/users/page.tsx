@@ -70,11 +70,34 @@ export default function AdminUsersPage() {
   return (
     <AdminLayout>
       <div className="space-y-6 w-full max-w-4xl">
-        <div>
-          <h1 className="text-2xl font-bold">User management</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Approve new members, change roles, or manage account status
-          </p>
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-bold">User management</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Approve new members, change roles, or manage account status
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={async () => {
+              const res = await fetch("/api/admin/export");
+              if (res.ok) {
+                const data = await res.json();
+                const blob = new Blob([JSON.stringify(data, null, 2)], {
+                  type: "application/json",
+                });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = `apex-users-${Date.now()}.json`;
+                a.click();
+                toast.success("Export downloaded");
+              } else toast.error("Export failed");
+            }}
+            className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold shrink-0"
+          >
+            Export all users
+          </button>
         </div>
 
         <div className="flex flex-wrap gap-2">
@@ -166,6 +189,23 @@ export default function AdminUsersPage() {
                       Reinstate
                     </button>
                   )}
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const note = prompt("Moderator note for @" + u.username);
+                      if (!note?.trim()) return;
+                      const res = await fetch(`/api/admin/users/${u.id}/notes`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ note: note.trim() }),
+                      });
+                      if (res.ok) toast.success("Note saved");
+                      else toast.error("Could not save note");
+                    }}
+                    className="px-3 py-1.5 rounded-lg border border-border text-xs font-semibold hover:bg-muted"
+                  >
+                    Add note
+                  </button>
                 </div>
               </div>
             ))}

@@ -60,17 +60,17 @@ export async function GET(req: Request, { params }: { params: Promise<{ username
     // 2. Requester is self
     // 3. Post is FOLLOWERS and requester is accepted follower
     // 4. Post is MUTUALS and requester has mutual follow status
+    const visibilityFilters: { visibility: "PUBLIC" | "FOLLOWERS" | "MUTUALS" }[] = [
+      { visibility: "PUBLIC" },
+    ];
+    if (isAcceptedFollower) visibilityFilters.push({ visibility: "FOLLOWERS" });
+    if (isMutual) visibilityFilters.push({ visibility: "MUTUALS" });
+
     const posts = await prisma.post.findMany({
       where: {
         authorId: targetUser.id,
         deletedAt: null,
-        OR: isSelf
-          ? [{ authorId: targetUser.id }]
-          : [
-              { visibility: "PUBLIC" },
-              isAcceptedFollower ? { visibility: "FOLLOWERS" } : {},
-              isMutual ? { visibility: "MUTUALS" } : {},
-            ],
+        ...(isSelf ? {} : { OR: visibilityFilters }),
       },
       orderBy: { createdAt: "desc" },
       include: {

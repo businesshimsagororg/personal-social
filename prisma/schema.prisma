@@ -108,6 +108,7 @@ model User {
   comments             Comment[]         @relation("CommentAuthor")
   likes                Like[]
   shares               Share[]
+  bookmarks            Bookmark[]
 
   // Follow relationships
   followers            Follow[]          @relation("Following")
@@ -132,6 +133,8 @@ model User {
   // Audit Logs
   media      Media[]    @relation("UserMedia")
   auditLogs AuditLog[] @relation("UserAuditLogs")
+  adminNotesReceived AdminUserNote[] @relation("NotesOnUser")
+  adminNotesWritten  AdminUserNote[] @relation("NotesWritten")
 
   @@index([email])
   @@index([username])
@@ -143,6 +146,7 @@ model Profile {
   user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   displayName    String?
   avatarUrl      String?
+  coverUrl       String?
   bio            String?
   website        String?
   location       String?
@@ -193,6 +197,7 @@ model Post {
   comments   Comment[]
   likes      Like[]
   shares     Share[]
+  bookmarks  Bookmark[]
   tags       PostHashtag[]
   reports    Report[]       @relation("ReportedPost")
 
@@ -248,6 +253,31 @@ model Share {
 
   @@unique([userId, postId])
   @@index([postId])
+}
+
+model Bookmark {
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@id([userId, postId])
+  @@index([userId])
+  @@index([postId])
+}
+
+model AdminUserNote {
+  id           String   @id @default(uuid())
+  targetUserId String
+  targetUser   User     @relation("NotesOnUser", fields: [targetUserId], references: [id], onDelete: Cascade)
+  authorId     String
+  author       User     @relation("NotesWritten", fields: [authorId], references: [id], onDelete: Cascade)
+  note         String
+  createdAt    DateTime @default(now())
+
+  @@index([targetUserId])
+  @@index([authorId])
 }
 
 model Hashtag {

@@ -68,7 +68,8 @@ useEffect(() => {
       });
       if (res.ok) {
         const data = await res.json();
-        onConversationCreated(data.conversation.id);
+        const id = data.conversation?.id ?? data.id;
+        if (id) onConversationCreated(id);
         onClose();
         setSearchQuery("");
       }

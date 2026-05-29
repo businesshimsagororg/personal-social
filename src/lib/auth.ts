@@ -2,10 +2,11 @@ import bcrypt from "bcryptjs";
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import { prisma } from "./prisma";
+import { getJwtSecret } from "./jwt-secret";
 
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || "super-secret-random-key-32-chars-at-least-1234-abcd"
-);
+function jwtSecret() {
+  return getJwtSecret();
+}
 
 // Hashing passwords
 export async function hashPassword(password: string): Promise<string> {
@@ -23,12 +24,12 @@ export async function generateToken(payload: { userId: string; email: string; ro
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime("7d") // 7 days expiration
-    .sign(JWT_SECRET);
+    .sign(jwtSecret());
 }
 
 export async function verifyToken(token: string) {
   try {
-    const { payload } = await jwtVerify(token, JWT_SECRET);
+    const { payload } = await jwtVerify(token, jwtSecret());
     return payload as { userId: string; email: string; role: string };
   } catch (error) {
     return null;

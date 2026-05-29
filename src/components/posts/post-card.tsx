@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import ReportModal from "@/components/ReportModal";
 import Image from "next/image";
+import Link from "next/link";
 import {
   Heart,
   MessageCircle,
@@ -13,6 +14,10 @@ import {
   Globe,
   Users,
   Shield,
+  Bookmark,
+  Share2,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 
 interface Comment {
@@ -54,11 +59,43 @@ interface Post {
 interface PostCardProps {
   post: Post;
   currentUserId?: string;
+  onDeleted?: (postId: string) => void;
 }
 
-export default function PostCard({ post, currentUserId }: PostCardProps) {
+function renderPostContent(content: string) {
+  const parts = content.split(/(\s+)/);
+  return parts.map((part, i) => {
+    if (part.startsWith("#") && part.length > 1) {
+      const tag = part.replace(/[^\w#]/g, "").slice(1);
+      if (!tag) return part;
+      return (
+        <Link key={i} href={`/hashtag/${tag}`} className="text-primary hover:underline font-medium">
+          #{tag}
+        </Link>
+      );
+    }
+    if (part.startsWith("@") && part.length > 1) {
+      const user = part.replace(/[^\w@]/g, "").slice(1);
+      if (!user) return part;
+      return (
+        <Link key={i} href={`/profile/${user}`} className="text-primary hover:underline font-medium">
+          @{user}
+        </Link>
+      );
+    }
+    return part;
+  });
+}
+
+export default function PostCard({ post, currentUserId, onDeleted }: PostCardProps) {
   const [isLiked, setIsLiked] = useState(post.isLiked);
   const [likesCount, setLikesCount] = useState(post.likesCount);
+  const [sharesCount, setSharesCount] = useState(post.sharesCount);
+  const [isBookmarked, setIsBookmarked] = useState(
+    Boolean((post as Post & { isBookmarked?: boolean }).isBookmarked)
+  );
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [removed, setRemoved] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [comments, setComments] = useState<Comment[]>([]);
   const [commentsCount, setCommentsCount] = useState(post.commentsCount);
@@ -70,8 +107,9 @@ export default function PostCard({ post, currentUserId }: PostCardProps) {
   const [showReport, setShowReport] = useState(false);
 
   const handleLikeToggle = async () => {
-    // Optimistic UI updates
-    const nextLiked = !isLiked;
+    const prevLiked = isLiked;
+    const prevCount = likesCount;
+    const nextLiked = !prevLiked;
     setIsLiked(nextLiked);
     setLikesCount((prev) => (nextLiked ? prev + 1 : prev - 1));
 
@@ -84,10 +122,54 @@ export default function PostCard({ post, currentUserId }: PostCardProps) {
         throw new Error();
       }
     } catch (e) {
-      // Revert if error
-      setIsLiked(isLiked);
-      setLikesCount(likesCount);
+      setIsLiked(prevLiked);
+      setLikesCount(prevCount);
     }
+  };
+
+  const handleShare = async () => {
+    try {
+      const res = await fetch(`/api/posts/${post.id}/share`, { method: "POST" });
+      if (res.ok) {
+        const data = await res.json();
+        setSharesCount(data.sharesCount ?? sharesCount + 1);
+      }
+    } catch {
+      /* ignore */
+    }
+  };
+
+  const handleBookmark = async () => {
+    const next = !isBookmarked;
+    setIsBookmarked(next);
+    try {
+      const res = await fetch(`/api/posts/${post.id}/bookmark`, {
+        method: next ? "POST" : "DELETE",
+      });
+      if (!res.ok) setIsBookmarked(!next);
+    } catch {
+      setIsBookmarked(!next);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!confirm("Delete this post?")) return;
+    const res = await fetch(`/api/posts/${post.id}`, { method: "DELETE" });
+    if (res.ok) {
+      setRemoved(true);
+      onDeleted?.(post.id);
+    }
+  };
+
+  const handleEdit = async () => {
+    const next = prompt("Edit post", post.content);
+    if (next === null || next.trim() === post.content) return;
+    const res = await fetch(`/api/posts/${post.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content: next.trim() }),
+    });
+    if (res.ok) window.location.reload();
   };
 
   const loadComments = async () => {
@@ -254,6 +336,10 @@ export default function PostCard({ post, currentUserId }: PostCardProps) {
     </div>
   );
 
+  if (removed) return null;
+
+  const isAuthor = currentUserId === post.author.id;
+
   return (
     <article className="glass rounded-3xl p-6 border border-border/80 shadow-lg relative overflow-hidden transition-all duration-300 hover:shadow-xl hover:border-border">
       {/* Header */}
@@ -303,22 +389,62 @@ export default function PostCard({ post, currentUserId }: PostCardProps) {
           </div>
         </div>
 
-        {currentUserId && currentUserId !== post.author.id && (
-          <button
-            type="button"
-            onClick={() => setShowReport(true)}
-            className="p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/40 transition"
-            title="Report post"
-          >
-            <MoreHorizontal className="h-5 w-5" />
-          </button>
+        {currentUserId && (
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setMenuOpen(!menuOpen)}
+              className="p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/40 transition"
+            >
+              <MoreHorizontal className="h-5 w-5" />
+            </button>
+            {menuOpen && (
+              <div className="absolute right-0 top-full mt-1 z-20 min-w-[160px] py-1 rounded-xl border border-border bg-card shadow-lg text-sm">
+                {isAuthor ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMenuOpen(false);
+                        handleEdit();
+                      }}
+                      className="w-full px-3 py-2 text-left hover:bg-muted flex items-center gap-2"
+                    >
+                      <Pencil className="h-4 w-4" /> Edit
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMenuOpen(false);
+                        handleDelete();
+                      }}
+                      className="w-full px-3 py-2 text-left hover:bg-muted text-destructive flex items-center gap-2"
+                    >
+                      <Trash2 className="h-4 w-4" /> Delete
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      setShowReport(true);
+                    }}
+                    className="w-full px-3 py-2 text-left hover:bg-muted"
+                  >
+                    Report
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
         )}
       </div>
 
       {/* Content */}
       <div className="space-y-4 mb-5">
         <p className="text-sm md:text-base text-foreground/90 whitespace-pre-wrap leading-relaxed">
-          {post.content}
+          {renderPostContent(post.content)}
         </p>
 
         {/* Media Attachments */}
@@ -354,6 +480,27 @@ export default function PostCard({ post, currentUserId }: PostCardProps) {
           <MessageCircle className="h-5 w-5" />
           <span>{commentsCount} Comments</span>
         </button>
+
+        <button
+          type="button"
+          onClick={handleShare}
+          className="flex items-center gap-2 hover:text-sky-500 transition"
+        >
+          <Share2 className="h-5 w-5" />
+          <span>{sharesCount}</span>
+        </button>
+
+        {currentUserId && (
+          <button
+            type="button"
+            onClick={handleBookmark}
+            className={`flex items-center gap-2 transition hover:text-amber-500 ${
+              isBookmarked ? "text-amber-500" : ""
+            }`}
+          >
+            <Bookmark className={`h-5 w-5 ${isBookmarked ? "fill-amber-500" : ""}`} />
+          </button>
+        )}
       </div>
 
       {/* Expandable Comments Drawer Section */}

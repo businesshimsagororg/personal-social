@@ -43,6 +43,13 @@ export async function GET(req: NextRequest) {
         new URL(getGoogleAuthErrorRedirect("Invalid OAuth session. Please try again.", returnTo), appUrl)
       );
     }
+  } else if (code) {
+    return NextResponse.redirect(
+      new URL(
+        getGoogleAuthErrorRedirect("Invalid OAuth session. Please try again.", returnTo),
+        appUrl
+      )
+    );
   }
 
   if (oauthError) {
@@ -105,8 +112,8 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(new URL("/feed", appUrl));
   } catch (error) {
     console.error("Google OAuth callback error:", error);
-    const message =
-      error instanceof Error ? error.message : "Google sign-in failed. Please try again.";
-    return NextResponse.redirect(new URL(getGoogleAuthErrorRedirect(message, returnTo), appUrl));
+    return NextResponse.redirect(
+      new URL(getGoogleAuthErrorRedirect("Google sign-in failed. Please try again.", returnTo), appUrl)
+    );
   }
 }

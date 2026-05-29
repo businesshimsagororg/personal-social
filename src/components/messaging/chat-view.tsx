@@ -132,13 +132,30 @@ usePusherChannel(`private-conversation-${conversationId}`, "message:new", (paylo
 });
 
   // Send message
-  const handleSendMessage = async (content: string) => {
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleTyping = () => {
+    if (typingTimeoutRef.current) return;
+    fetch(`/api/conversations/${conversationId}/typing`, { method: "POST" }).catch(() => {});
+    typingTimeoutRef.current = setTimeout(() => {
+      typingTimeoutRef.current = null;
+    }, 2000);
+  };
+
+  const handleSendMessage = async (
+    content: string,
+    options?: { mediaUrl?: string; type?: string }
+  ) => {
     setSending(true);
     try {
       const res = await fetch(`/api/conversations/${conversationId}/messages`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content, type: "TEXT" }),
+        body: JSON.stringify({
+          content,
+          type: options?.type || "TEXT",
+          mediaUrl: options?.mediaUrl,
+        }),
       });
       if (res.ok) {
         const data = await res.json();
@@ -338,7 +355,7 @@ usePusherChannel(`private-conversation-${conversationId}`, "message:new", (paylo
 
       {/* Input */}
       <div className="p-3">
-        <MessageInput onSend={handleSendMessage} disabled={sending} />
+        <MessageInput onSend={handleSendMessage} onTyping={handleTyping} disabled={sending} />
       </div>
     </div>
   );

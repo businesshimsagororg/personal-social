@@ -1,12 +1,13 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Activity,
   FileText,
   LayoutDashboard,
+  Mail,
   ShieldAlert,
   Users,
   UserPlus,
@@ -17,6 +18,7 @@ const menu = [
   { href: "/admin", icon: LayoutDashboard, label: "Overview", exact: true },
   { href: "/admin/users", icon: Users, label: "Users" },
   { href: "/admin/posts", icon: FileText, label: "Posts" },
+  { href: "/admin/messages", icon: Mail, label: "Messages", adminOnly: true },
   { href: "/admin/reports", icon: ShieldAlert, label: "Reports" },
   { href: "/admin/invites", icon: UserPlus, label: "Invites" },
   { href: "/admin/activity", icon: Activity, label: "Activity log" },
@@ -25,13 +27,23 @@ const menu = [
 
 export default function AdminSidebar() {
   const pathname = usePathname();
+  const [role, setRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => setRole(d?.user?.role ?? null))
+      .catch(() => setRole(null));
+  }, []);
+
+  const visibleMenu = menu.filter((item) => !item.adminOnly || role === "ADMIN");
 
   return (
     <nav className="space-y-1">
       <p className="text-xs font-extrabold uppercase tracking-wider text-muted-foreground px-2 mb-3">
         Administration
       </p>
-      {menu.map((item) => {
+      {visibleMenu.map((item) => {
         const active = item.exact
           ? pathname === item.href
           : pathname?.startsWith(item.href);

@@ -28,6 +28,9 @@ export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState<"posts" | "media" | "info">("posts");
 
   const [followLoading, setFollowLoading] = useState(false);
+  const [listModal, setListModal] = useState<"followers" | "following" | null>(null);
+  const [listUsers, setListUsers] = useState<{ username: string; displayName?: string | null }[]>([]);
+  const [mediaItems, setMediaItems] = useState<{ url: string; type: string }[]>([]);
 
   const fetchProfile = async () => {
     try {
@@ -43,12 +46,18 @@ export default function ProfilePage() {
       setProfileData(data);
 
       if (data.relationship.canViewContent) {
-        // Load target posts
         setPostsLoading(true);
-        const postsRes = await fetch(`/api/users/${username}/posts`);
+        const [postsRes, mediaRes] = await Promise.all([
+          fetch(`/api/users/${username}/posts`),
+          fetch(`/api/users/${username}/media`),
+        ]);
         if (postsRes.ok) {
           const postsData = await postsRes.json();
           setPosts(postsData.posts);
+        }
+        if (mediaRes.ok) {
+          const mediaData = await mediaRes.json();
+          setMediaItems(mediaData.media || []);
         }
         setPostsLoading(false);
       }
@@ -104,6 +113,23 @@ export default function ProfilePage() {
           <div className="h-24 w-24 rounded-full bg-muted" />
           <div className="h-6 w-1/3 bg-muted rounded" />
           <div className="h-4 w-1/4 bg-muted rounded" />
+        </div>
+      </AppLayout>
+    );
+  }
+
+  if (!profileData) {
+    return (
+      <AppLayout>
+        <div className="flex flex-col items-center justify-center py-20 text-center space-y-3">
+          <p className="text-lg font-semibold text-foreground">Could not load profile</p>
+          <p className="text-sm text-muted-foreground">Please try again later.</p>
+          <button
+            onClick={() => fetchProfile()}
+            className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold"
+          >
+            Retry
+          </button>
         </div>
       </AppLayout>
     );
@@ -166,9 +192,17 @@ export default function ProfilePage() {
     );
   };
 
-  const filteredPosts = activeTab === "media" 
-    ? posts.filter(p => p.media && p.media.length > 0)
-    : posts;
+  const openList = async (type: "followers" | "following") => {
+    setListModal(type);
+    const res = await fetch(`/api/users/${username}/${type}`);
+    if (res.ok) {
+      const data = await res.json();
+      setListUsers(data.users || []);
+    }
+  };
+
+  const filteredPosts =
+    activeTab === "media" ? posts.filter((p) => p.media && p.media.length > 0) : posts;
 
   return (
     <AppLayout>
@@ -176,8 +210,11 @@ export default function ProfilePage() {
         {/* Profile Card Header */}
         <div className="glass rounded-3xl overflow-hidden border border-border/80 shadow-xl relative">
           {/* Custom Aesthetic Cover Banner */}
-          <div className="h-36 bg-gradient-to-r from-violet-600 via-indigo-600 to-pink-500 relative">
-            <div className="absolute inset-0 bg-black/10"></div>
+          <div
+            className="h-36 bg-gradient-to-r from-violet-600 via-indigo-600 to-pink-500 relative bg-cover bg-center"
+            style={profile?.coverUrl ? { backgroundImage: `url(${profile.coverUrl})` } : undefined}
+          >
+            <div className="absolute inset-0 bg-black/20"></div>
           </div>
 
           <div className="px-6 pb-6 relative">
@@ -250,14 +287,22 @@ export default function ProfilePage() {
                   <span className="text-foreground font-extrabold">{stats.postsCount}</span>
                   <span className="text-muted-foreground font-medium">Posts</span>
                 </div>
-                <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => openList("followers")}
+                  className="flex items-center gap-1.5 hover:text-primary transition"
+                >
                   <span className="text-foreground font-extrabold">{stats.followersCount}</span>
                   <span className="text-muted-foreground font-medium">Followers</span>
-                </div>
-                <div className="flex items-center gap-1.5">
+                </button>
+                <button
+                  type="button"
+                  onClick={() => openList("following")}
+                  className="flex items-center gap-1.5 hover:text-primary transition"
+                >
                   <span className="text-foreground font-extrabold">{stats.followingCount}</span>
                   <span className="text-muted-foreground font-medium">Following</span>
-                </div>
+                </button>
               </div>
             </div>
           </div>
@@ -329,6 +374,26 @@ export default function ProfilePage() {
                   </div>
                 </div>
               </div>
+            ) : activeTab === "media" ? (
+              mediaItems.length === 0 ? (
+                <div className="glass rounded-3xl p-12 border border-border/80 text-center text-muted-foreground text-sm">
+                  No media yet.
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {mediaItems.map((m) => (
+                    <a
+                      key={m.url}
+                      href={m.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="aspect-square rounded-xl overflow-hidden border border-border"
+                    >
+                      <img src={m.url} alt="" className="w-full h-full object-cover" />
+                    </a>
+                  ))}
+                </div>
+              )
             ) : postsLoading ? (
               <div className="space-y-4 animate-pulse">
                 <div className="h-32 bg-muted rounded-3xl" />
@@ -348,6 +413,34 @@ export default function ProfilePage() {
           </div>
         )}
       </div>
+      {listModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm">
+          <div className="glass w-full max-w-md rounded-2xl border border-border p-4 max-h-[70vh] overflow-y-auto">
+            <h3 className="font-bold capitalize mb-3">{listModal}</h3>
+            <ul className="space-y-2">
+              {listUsers.map((u) => (
+                <li key={u.username}>
+                  <a
+                    href={`/profile/${u.username}`}
+                    className="block p-2 rounded-lg hover:bg-muted text-sm font-medium"
+                    onClick={() => setListModal(null)}
+                  >
+                    {u.displayName || u.username}{" "}
+                    <span className="text-muted-foreground">@{u.username}</span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+            <button
+              type="button"
+              onClick={() => setListModal(null)}
+              className="mt-4 w-full py-2 rounded-xl bg-muted text-sm font-semibold"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </AppLayout>
   );
 }

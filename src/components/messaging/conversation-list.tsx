@@ -95,7 +95,7 @@ export default function ConversationList({
           className="flex items-center justify-center p-2.5 rounded-xl bg-primary/10 border border-primary/20 text-primary hover:bg-primary hover:text-primary-foreground shadow-sm active:scale-95 transition"
           title="New Message"
         >
-          <Plus className="h-4.5 w-4.5" />
+          <Plus className="h-5 w-5" />
         </button>
       </div>
 

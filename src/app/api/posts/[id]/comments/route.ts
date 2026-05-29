@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
 import { commentCreateSchema } from "@/lib/validations";
 import { sanitizeText } from "@/lib/sanitize";
+import { canViewerAccessPost } from "@/lib/post-access";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -18,6 +19,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
     if (!post) {
       return NextResponse.json({ error: "Post not found" }, { status: 404 });
+    }
+
+    if (!(await canViewerAccessPost(user.id, post))) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     const body = await req.json();
@@ -106,7 +111,18 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Fetch flat list of comments first, then construct hierarchical threads in memory
+    const post = await prisma.post.findUnique({
+      where: { id: postId },
+    });
+
+    if (!post) {
+      return NextResponse.json({ error: "Post not found" }, { status: 404 });
+    }
+
+    if (!(await canViewerAccessPost(user.id, post))) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     const comments = await prisma.comment.findMany({
       where: {
         postId,

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
 import { postCreateSchema } from "@/lib/validations";
 import { sanitizeText } from "@/lib/sanitize";
+import { notifyMentions, syncPostHashtags } from "@/lib/post-content";
 
 export async function POST(req: Request) {
   try {
@@ -24,18 +25,6 @@ export async function POST(req: Request) {
     const { media, visibility } = result.data;
     const content = sanitizeText(result.data.content);
 
-    // Parse hashtags from content (e.g., #tech #welcome)
-    const hashtagRegex = /#(\w+)/g;
-    const hashtags: string[] = [];
-    let match;
-    while ((match = hashtagRegex.exec(content)) !== null) {
-      const hashtagName = match[1].toLowerCase();
-      if (!hashtags.includes(hashtagName)) {
-        hashtags.push(hashtagName);
-      }
-    }
-
-    // Database transaction to create post and map hashtags
     const newPost = await prisma.$transaction(async (tx) => {
       const post = await tx.post.create({
         data: {
@@ -46,26 +35,11 @@ export async function POST(req: Request) {
         },
       });
 
-      // Handle hashtags
-      for (const tagName of hashtags) {
-        // Find or create the hashtag
-        const tag = await tx.hashtag.upsert({
-          where: { name: tagName },
-          update: {},
-          create: { name: tagName },
-        });
-
-        // Link post to hashtag
-        await tx.postHashtag.create({
-          data: {
-            postId: post.id,
-            hashtagId: tag.id,
-          },
-        });
-      }
-
+      await syncPostHashtags(post.id, content, tx);
       return post;
     });
+
+    await notifyMentions(content, user.id, newPost.id);
 
     // Write audit log
     await prisma.auditLog.create({

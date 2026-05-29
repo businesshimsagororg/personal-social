@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Providers } from "@/components/providers";
 
@@ -7,13 +7,18 @@ export const metadata: Metadata = {
   description: "A secure, private, and closed community social network.",
 };
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="antialiased" style={{ colorScheme: "dark" }}>
+    <html lang="en" className="antialiased">
       <body className="min-h-screen bg-background text-foreground transition-colors duration-300">
         <Providers>
           {children}

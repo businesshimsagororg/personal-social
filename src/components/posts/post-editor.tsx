@@ -74,7 +74,7 @@ export default function PostEditor({ onPostCreated }: PostEditorProps) {
             required
             rows={3}
             maxLength={2000}
-            placeholder="Share something with the community..."
+            placeholder="Share something… Use @username to mention and #tag for hashtags"
             value={content}
             onChange={(e) => setContent(e.target.value)}
             className="w-full bg-transparent border-0 resize-none text-foreground placeholder-muted-foreground focus:outline-none focus:ring-0 text-sm md:text-base leading-relaxed"

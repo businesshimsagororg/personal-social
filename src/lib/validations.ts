@@ -63,12 +63,14 @@ export const profileUpdateSchema = z.object({
   location: z.string().max(50, "Location cannot exceed 50 characters").nullable().optional(),
   privacySetting: z.enum(["PUBLIC", "FOLLOWERS", "PRIVATE"]).default("PUBLIC"),
   avatarUrl: z.string().url().or(z.literal("")).nullable().optional(),
+  coverUrl: z.string().url().or(z.literal("")).nullable().optional(),
 });
 
-// Messaging Schemas
+// Messaging Schemas — text or media (at least one required at route level)
 export const messageCreateSchema = z.object({
-  content: z.string().min(1, "Message content cannot be empty").max(1000, "Message too long"),
+  content: z.string().max(1000, "Message too long").optional().default(""),
   mediaUrl: z.string().url().nullable().optional(),
+  type: z.enum(["TEXT", "IMAGE", "VIDEO", "FILE"]).optional(),
 });
 
 // Admin Schemas

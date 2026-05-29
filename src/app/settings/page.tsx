@@ -13,7 +13,9 @@ export default function SettingsPage() {
   const [location, setLocation] = useState("");
   const [website, setWebsite] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
+  const [coverUrl, setCoverUrl] = useState("");
   const [privacySetting, setPrivacySetting] = useState<"PUBLIC" | "FOLLOWERS" | "PRIVATE">("PUBLIC");
+  const [pushEnabled, setPushEnabled] = useState(false);
 
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState("");
@@ -33,7 +35,9 @@ export default function SettingsPage() {
           setLocation(profile.location || "");
           setWebsite(profile.website || "");
           setAvatarUrl(profile.avatarUrl || "");
+          setCoverUrl(profile.coverUrl || "");
           setPrivacySetting(profile.privacySetting || "PUBLIC");
+          setPushEnabled(Boolean(data.user.pushToken));
         }
       } catch (e) {
         console.error(e);
@@ -60,7 +64,16 @@ export default function SettingsPage() {
           location,
           website: website || null,
           avatarUrl: avatarUrl || null,
+          coverUrl: coverUrl || null,
           privacySetting,
+        }),
+      });
+
+      await fetch("/api/users/me/push-token", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          pushToken: pushEnabled ? currentUser.pushToken || "web-push-enabled" : null,
         }),
       });
 
@@ -143,6 +156,19 @@ export default function SettingsPage() {
                   placeholder="https://images.unsplash.com/... or similar"
                   value={avatarUrl}
                   onChange={(e) => setAvatarUrl(e.target.value)}
+                  className="block w-full px-4 py-3 rounded-xl border border-border bg-background/50 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition"
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-sm font-semibold text-foreground mb-2">
+                  Cover photo URL
+                </label>
+                <input
+                  type="url"
+                  placeholder="https://..."
+                  value={coverUrl}
+                  onChange={(e) => setCoverUrl(e.target.value)}
                   className="block w-full px-4 py-3 rounded-xl border border-border bg-background/50 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition"
                 />
               </div>
@@ -246,6 +272,18 @@ export default function SettingsPage() {
                   <span className="text-[10px] mt-1">Only you can view your profile contents and posts list. Standard lock display for others.</span>
                 </div>
               </div>
+            </div>
+
+            <div className="pt-4 border-t border-border/40">
+              <label className="flex items-center gap-2 text-sm font-semibold cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={pushEnabled}
+                  onChange={(e) => setPushEnabled(e.target.checked)}
+                  className="rounded border-border"
+                />
+                Enable browser push notifications (requires OneSignal setup)
+              </label>
             </div>
 
             <div className="pt-4 flex justify-end">

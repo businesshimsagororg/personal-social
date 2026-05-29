@@ -141,7 +141,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     }
 
     const { mediaUrl } = result.data;
-    const content = sanitizeText(result.data.content);
+    const content = sanitizeText(result.data.content || "");
+
+    if (!content.trim() && !mediaUrl) {
+      return NextResponse.json({ error: "Message cannot be empty" }, { status: 400 });
+    }
 
     // Determine message type
     let messageType: "TEXT" | "IMAGE" | "VIDEO" | "FILE" = "TEXT";
