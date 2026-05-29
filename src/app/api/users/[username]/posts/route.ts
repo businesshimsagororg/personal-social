@@ -74,6 +74,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ username
       },
       orderBy: { createdAt: "desc" },
       include: {
+        media: true,
         author: {
           select: {
             id: true,

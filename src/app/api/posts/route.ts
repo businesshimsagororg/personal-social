@@ -39,7 +39,7 @@ export async function POST(req: Request) {
         data: {
           authorId: user.id,
           content,
-          media,
+          ...(media.length > 0 ? { media: { create: media } } : {}),
           visibility,
         },
       });
