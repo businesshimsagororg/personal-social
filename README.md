@@ -50,7 +50,9 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 | `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` | No | Rate limiting / cache |
 | `ONESIGNAL_APP_ID` / `ONESIGNAL_API_KEY` | No | Push notifications |
 
-The production build runs `prisma generate` then `next build` (see `package.json`). `prisma generate` does not need a live database. Set `DATABASE_URL` before the app serves traffic so API routes can connect.
+The production build runs `prisma generate`, `prisma migrate deploy`, then `next build` (see `package.json`). Set `DATABASE_URL` in Vercel for **both** Build and Runtime so migrations apply and API routes can connect.
+
+**Registration on Vercel:** set `NEXT_PUBLIC_APP_URL` to your production URL (e.g. `https://your-app.vercel.app`). Without SMTP, keep `USE_MOCK_EMAIL=true` (default in `.env.example`) so new users are email-verified automatically and can sign in after signup. Set `REQUIRE_ADMIN_APPROVAL=true` only if you want manual approval (there is no admin approval UI yet).
 
 ### Local setup
 

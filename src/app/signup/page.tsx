@@ -35,7 +35,13 @@ export default function SignupPage() {
         throw new Error(data.error || "Registration failed");
       }
 
-      setSuccess(data.message || "Account registered successfully! Check your email.");
+      const canLoginNow =
+        data.emailVerified && data.status === "ACTIVE";
+      setSuccess(
+        canLoginNow
+          ? `${data.message || "Account created."} You can sign in now.`
+          : data.message || "Account registered successfully! Check your email."
+      );
       
       // Clear inputs
       setEmail("");

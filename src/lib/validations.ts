@@ -9,7 +9,10 @@ export const signupSchema = z.object({
     .max(20, "Username cannot exceed 20 characters")
     .regex(/^[a-zA-Z0-9_]+$/, "Username can only contain letters, numbers, and underscores"),
   password: z.string().min(8, "Password must be at least 8 characters"),
-  inviteCode: z.string().optional(), // Invite code may be required based on admin settings
+  inviteCode: z
+    .string()
+    .optional()
+    .transform((val) => (val?.trim() ? val.trim() : undefined)),
 });
 
 export const loginSchema = z.object({

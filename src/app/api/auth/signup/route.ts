@@ -3,6 +3,11 @@ import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/lib/auth";
 import { signupSchema } from "@/lib/validations";
 import { sendEmail, getEmailVerificationTemplate } from "@/lib/email";
+import {
+  getAppUrl,
+  requiresAdminApproval,
+  shouldSkipEmailVerification,
+} from "@/lib/app-url";
 import crypto from "crypto";
 
 export async function POST(req: Request) {
@@ -34,8 +39,8 @@ export async function POST(req: Request) {
     }
 
     // Check invite system settings / invite codes
-    let statusToAssign = "PENDING_APPROVAL"; // default private community flow
-    let verifiedInvite: any = null;
+    let statusToAssign = requiresAdminApproval() ? "PENDING_APPROVAL" : "ACTIVE";
+    let verifiedInvite: { id: string } | null = null;
 
     if (inviteCode) {
       verifiedInvite = await prisma.invite.findFirst({
@@ -68,8 +73,13 @@ export async function POST(req: Request) {
     const isFirstUser = userCount === 0;
 
     const passwordHash = await hashPassword(password);
-    const emailVerifyToken = crypto.randomBytes(32).toString("hex");
-    const emailVerifyExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+    const skipEmailVerification = shouldSkipEmailVerification();
+    const emailVerifyToken = skipEmailVerification
+      ? null
+      : crypto.randomBytes(32).toString("hex");
+    const emailVerifyExpires = skipEmailVerification
+      ? null
+      : new Date(Date.now() + 24 * 60 * 60 * 1000);
 
     // Create user and profile in transaction
     const newUser = await prisma.$transaction(async (tx) => {
@@ -79,7 +89,8 @@ export async function POST(req: Request) {
           username,
           passwordHash,
           role: isFirstUser ? "ADMIN" : "USER",
-          status: isFirstUser ? "ACTIVE" : (statusToAssign as any),
+          status: isFirstUser ? "ACTIVE" : (statusToAssign as "ACTIVE" | "PENDING_APPROVAL"),
+          emailVerified: skipEmailVerification,
           emailVerifyToken,
           emailVerifyExpires,
           profile: {
@@ -107,27 +118,50 @@ export async function POST(req: Request) {
       return u;
     });
 
-    // Send verification email
-    const verificationUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/verify-email?token=${emailVerifyToken}`;
-    await sendEmail({
-      to: email,
-      subject: "Verify your email address",
-      html: getEmailVerificationTemplate(username, verificationUrl),
-    });
+    let verificationUrl: string | undefined;
+    if (!skipEmailVerification && emailVerifyToken) {
+      verificationUrl = `${getAppUrl()}/verify-email?token=${emailVerifyToken}`;
+      await sendEmail({
+        to: email,
+        subject: "Verify your email address",
+        html: getEmailVerificationTemplate(username, verificationUrl),
+      });
+    }
+
+    const needsApproval =
+      newUser.status === "PENDING_APPROVAL" && !isFirstUser && !inviteCode;
 
     return NextResponse.json(
       {
         message: isFirstUser
-          ? "Admin user created successfully! Verification email sent."
-          : inviteCode
-          ? "Account registered successfully! Please check your email to verify."
-          : "Account registered successfully! Awaiting administrator approval. Please check your email to verify.",
+          ? skipEmailVerification
+            ? "Admin account created. You can sign in now."
+            : "Admin account created. Check your email to verify, then sign in."
+          : needsApproval
+            ? "Account created. Awaiting administrator approval, then verify your email to sign in."
+            : skipEmailVerification
+              ? "Account created. You can sign in now."
+              : "Account created. Check your email to verify, then sign in.",
         status: newUser.status,
+        emailVerified: newUser.emailVerified,
       },
       { status: 201 }
     );
   } catch (error) {
     console.error("Signup error:", error);
+    const prismaCode =
+      error && typeof error === "object" && "code" in error
+        ? String((error as { code: string }).code)
+        : "";
+    if (prismaCode === "P2021") {
+      return NextResponse.json(
+        {
+          error:
+            "Database tables are missing. Run migrations on the server (prisma migrate deploy) and try again.",
+        },
+        { status: 503 }
+      );
+    }
     return NextResponse.json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
 }

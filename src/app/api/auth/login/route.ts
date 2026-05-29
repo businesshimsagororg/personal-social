@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { comparePassword, loginUserSession } from "@/lib/auth";
 import { loginSchema } from "@/lib/validations";
+import { shouldSkipEmailVerification } from "@/lib/app-url";
 
 export async function POST(req: Request) {
   try {
@@ -47,8 +48,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // Check if email verified (closed-community rule: optional but highly recommended)
-    if (!user.emailVerified) {
+    if (!user.emailVerified && !shouldSkipEmailVerification()) {
       return NextResponse.json(
         { error: "Please verify your email address before logging in. Check your mailbox for the verification link." },
         { status: 403 }

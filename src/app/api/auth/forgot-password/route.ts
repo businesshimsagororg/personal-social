@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { sendEmail, getPasswordResetTemplate } from "@/lib/email";
 import crypto from "crypto";
 import { forgotPasswordSchema } from "@/lib/validations";
+import { getAppUrl } from "@/lib/app-url";
 
 export async function POST(req: Request) {
   try {
@@ -37,7 +38,7 @@ export async function POST(req: Request) {
       },
     });
 
-    const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/reset-password?token=${passwordResetToken}`;
+    const resetUrl = `${getAppUrl()}/reset-password?token=${passwordResetToken}`;
     await sendEmail({
       to: email,
       subject: "Reset your password",
