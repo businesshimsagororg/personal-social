@@ -38,7 +38,8 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 
 | Variable | Required for build? | Purpose |
 |----------|---------------------|---------|
-| `DATABASE_URL` | No | Postgres connection at runtime |
+| `DATABASE_URL` | Yes (Production) | Supabase **transaction** pooler (`:6543`, `?pgbouncer=true`) |
+| `DIRECT_URL` | Yes (Production) | Supabase **session/direct** connection (`:5432`) for migrations |
 | `JWT_SECRET` | No | Session JWT signing |
 | `NEXTAUTH_SECRET` | No | NextAuth session encryption |
 | `NEXTAUTH_URL` | No | Canonical site URL for NextAuth |
@@ -50,7 +51,17 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 | `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` | No | Rate limiting / cache |
 | `ONESIGNAL_APP_ID` / `ONESIGNAL_API_KEY` | No | Push notifications |
 
-The production build runs `prisma generate`, `prisma migrate deploy`, then `next build` (see `package.json`). Set `DATABASE_URL` in Vercel for **both** Build and Runtime so migrations apply and API routes can connect.
+The production build runs `prisma generate`, `prisma migrate deploy`, then `next build` (see `package.json`). Set **`DATABASE_URL` and `DIRECT_URL`** in Vercel (Production + Preview, **Build** and **Runtime**) so migrations apply and login/signup work.
+
+**Vercel + Supabase (fix “Database is not configured”):**
+
+1. [Supabase](https://supabase.com/dashboard) → your project → **Project Settings** → **Database** → **Connection string**.
+2. Copy **Transaction pooler** → paste as `DATABASE_URL` in [Vercel env vars](https://vercel.com/docs/projects/environment-variables).
+3. Copy **Session pooler** or **Direct connection** → paste as `DIRECT_URL`.
+4. URL-encode special characters in the password (`#` → `%23`, `@` → `%40`).
+5. **Redeploy** (env changes do not apply to an already-running deployment until you redeploy).
+
+Also set `JWT_SECRET`, `NEXTAUTH_SECRET`, `NEXTAUTH_URL`, and `NEXT_PUBLIC_APP_URL` (your `https://….vercel.app` URL).
 
 **Registration on Vercel:** set `NEXT_PUBLIC_APP_URL` to your production URL (e.g. `https://your-app.vercel.app`). Without SMTP, keep `USE_MOCK_EMAIL=true` (default in `.env.example`) so new users are email-verified automatically and can sign in after signup. Set `REQUIRE_ADMIN_APPROVAL=true` only if you want manual approval — approve users at `/admin/users`.
 

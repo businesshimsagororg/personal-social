@@ -1,3 +1,5 @@
+import { resolveDatabaseEnv } from "@/lib/database-env";
+
 const PLACEHOLDER_MARKERS = [
   "[YOUR-PASSWORD]",
   "[PASSWORD]",
@@ -15,6 +17,7 @@ function hasPlaceholder(value: string | undefined): boolean {
 
 /** Returns a user-facing message when database URLs are missing or still templated. */
 export function getDatabaseConfigError(): string | null {
+  resolveDatabaseEnv();
   const databaseUrl = process.env.DATABASE_URL;
   const directUrl = process.env.DIRECT_URL;
 
