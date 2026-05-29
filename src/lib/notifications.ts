@@ -1,4 +1,5 @@
 import { prisma } from "./prisma";
+import { triggerUserEvent } from "./pusher";
 
 export type NotificationType =
   | "LIKE_POST"
@@ -34,6 +35,29 @@ export async function createNotification({
         actorId,
         type,
         targetId: targetId || null,
+      },
+      include: {
+        actor: {
+          select: {
+            id: true,
+            username: true,
+            profile: { select: { displayName: true, avatarUrl: true } },
+          },
+        },
+      },
+    });
+
+    await triggerUserEvent(recipientId, "notification:new", {
+      id: notification.id,
+      type: notification.type,
+      targetId: notification.targetId,
+      read: notification.read,
+      createdAt: notification.createdAt.toISOString(),
+      actor: {
+        id: notification.actor.id,
+        username: notification.actor.username,
+        displayName: notification.actor.profile?.displayName ?? null,
+        avatarUrl: notification.actor.profile?.avatarUrl ?? null,
       },
     });
 

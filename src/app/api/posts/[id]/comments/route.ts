@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
 import { commentCreateSchema } from "@/lib/validations";
+import { sanitizeText } from "@/lib/sanitize";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -29,7 +30,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       );
     }
 
-    const { content, parentId } = result.data;
+    const { parentId } = result.data;
+    const content = sanitizeText(result.data.content);
 
     // Create the comment and notifications in a transaction
     const newComment = await prisma.$transaction(async (tx) => {

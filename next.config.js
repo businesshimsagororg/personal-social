@@ -14,12 +14,21 @@ const nextConfig = {
   // Enable React Strict Mode for development safety
   reactStrictMode: true,
 
+  env: {
+    NEXT_PUBLIC_GOOGLE_OAUTH_ENABLED:
+      process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET ? "true" : "false",
+  },
+
   // Image optimization – allow loading from any CDN (UploadThing/Cloudinary)
   images: {
     remotePatterns: [
       {
         protocol: "https",
         hostname: "**",
+      },
+      {
+        protocol: "http",
+        hostname: "localhost",
       },
     ],
   },

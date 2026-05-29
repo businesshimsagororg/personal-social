@@ -60,7 +60,7 @@ export async function GET(req: NextRequest) {
       createdAt: n.createdAt,
     }));
 
-    return NextResponse.json(formattedNotifications);
+    return NextResponse.json({ notifications: formattedNotifications });
   } catch (error) {
     console.error("Error fetching notifications:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });

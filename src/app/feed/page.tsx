@@ -1,32 +1,44 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
+import InfiniteScroll from "react-infinite-scroll-component";
 import AppLayout from "@/components/layout/app-layout";
 import PostEditor from "@/components/posts/post-editor";
 import PostCard from "@/components/posts/post-card";
-import { Sparkles } from "lucide-react";
+import { Loader2, Sparkles } from "lucide-react";
 
 export default function FeedPage() {
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [nextCursor, setNextCursor] = useState<string | undefined>(undefined);
+  const [hasMore, setHasMore] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<string | undefined>(undefined);
 
-  const fetchFeed = async () => {
+  const loadPosts = useCallback(async (cursor?: string, append = false) => {
     try {
-      const res = await fetch("/api/posts?limit=30");
+      const params = new URLSearchParams({ limit: "10" });
+      if (cursor) params.set("cursor", cursor);
+      const res = await fetch(`/api/feed?${params}`);
       if (res.ok) {
         const data = await res.json();
-        setPosts(data.posts);
+        setPosts((prev) => (append ? [...prev, ...data.posts] : data.posts));
+        setNextCursor(data.nextCursor);
+        setHasMore(Boolean(data.nextCursor));
       }
     } catch (e) {
       console.error("Failed to load feed", e);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  const refreshFeed = useCallback(() => {
+    setLoading(true);
+    setHasMore(true);
+    loadPosts(undefined, false);
+  }, [loadPosts]);
 
   useEffect(() => {
-    // Load currentUser session to pass down to cards (for likes check)
     const checkUser = async () => {
       try {
         const res = await fetch("/api/auth/me");
@@ -38,15 +50,13 @@ export default function FeedPage() {
         console.error(err);
       }
     };
-
     checkUser();
-    fetchFeed();
-  }, []);
+    loadPosts();
+  }, [loadPosts]);
 
   return (
     <AppLayout>
       <div className="space-y-6">
-        {/* Welcome Banner */}
         <div className="flex items-center gap-3 mb-6 px-1">
           <div className="p-2.5 rounded-2xl bg-primary/10 border border-primary/20 text-primary">
             <Sparkles className="h-6 w-6 animate-pulse" />
@@ -57,14 +67,15 @@ export default function FeedPage() {
           </div>
         </div>
 
-        {/* Post Publisher */}
-        <PostEditor onPostCreated={fetchFeed} />
+        <PostEditor onPostCreated={refreshFeed} />
 
-        {/* Posts List */}
         {loading ? (
           <div className="space-y-4">
             {[1, 2, 3].map((n) => (
-              <div key={n} className="glass rounded-3xl p-6 border border-border/80 shadow-lg animate-pulse space-y-4">
+              <div
+                key={n}
+                className="glass rounded-3xl p-6 border border-border/80 shadow-lg animate-pulse space-y-4"
+              >
                 <div className="flex gap-3 items-center">
                   <div className="h-10 w-10 rounded-xl bg-muted shrink-0" />
                   <div className="space-y-2 flex-1">
@@ -73,7 +84,6 @@ export default function FeedPage() {
                   </div>
                 </div>
                 <div className="h-16 bg-muted rounded-xl" />
-                <div className="h-8 bg-muted rounded-xl w-1/2" />
               </div>
             ))}
           </div>
@@ -88,11 +98,25 @@ export default function FeedPage() {
             </p>
           </div>
         ) : (
-          <div className="space-y-5">
-            {posts.map((post) => (
-              <PostCard key={post.id} post={post} currentUserId={currentUserId} />
-            ))}
-          </div>
+          <InfiniteScroll
+            dataLength={posts.length}
+            next={() => nextCursor && loadPosts(nextCursor, true)}
+            hasMore={hasMore}
+            loader={
+              <div className="flex justify-center py-6">
+                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              </div>
+            }
+            endMessage={
+              <p className="text-center text-xs text-muted-foreground py-4">You are all caught up</p>
+            }
+          >
+            <div className="space-y-5">
+              {posts.map((post) => (
+                <PostCard key={post.id} post={post} currentUserId={currentUserId} />
+              ))}
+            </div>
+          </InfiniteScroll>
         )}
       </div>
     </AppLayout>

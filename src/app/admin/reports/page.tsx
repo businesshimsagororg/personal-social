@@ -8,6 +8,7 @@ import { toast } from 'react-hot-toast';
 interface Report {
   id: string;
   reporterId: string;
+  reporterUsername?: string;
   targetType: string;
   status: string;
   reason: string;
@@ -71,7 +72,10 @@ export default function ReportsPage() {
               <ShieldAlert className="h-5 w-5 text-primary" />
               <span className="font-medium">{r.targetType} - {r.reason}</span>
             </div>
-            <p className="text-sm text-muted-foreground mb-2">Submitted by {r.reporterId} on {new Date(r.createdAt).toLocaleString()}</p>
+            <p className="text-sm text-muted-foreground mb-2">
+              Submitted by @{r.reporterUsername || r.reporterId} on{" "}
+              {new Date(r.createdAt).toLocaleString()}
+            </p>
             <p>Status: <span className="font-semibold">{r.status}</span></p>
             <div className="mt-3 flex space-x-2">
               {r.status !== 'RESOLVED' && (

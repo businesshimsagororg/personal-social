@@ -43,7 +43,7 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 | `NEXTAUTH_SECRET` | No | NextAuth session encryption |
 | `NEXTAUTH_URL` | No | Canonical site URL for NextAuth |
 | `NEXT_PUBLIC_APP_URL` | No | Links in verification/reset emails |
-| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | No | Google OAuth (if enabled) |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | No | Google sign-in/sign-up (redirect URI below) |
 | `SMTP_*` / `USE_MOCK_EMAIL` | No | Outbound email |
 | `UPLOADTHING_SECRET` / `UPLOADTHING_APP_ID` | No | Media uploads |
 | `PUSHER_*` | No | Realtime events |
@@ -52,7 +52,17 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 
 The production build runs `prisma generate`, `prisma migrate deploy`, then `next build` (see `package.json`). Set `DATABASE_URL` in Vercel for **both** Build and Runtime so migrations apply and API routes can connect.
 
-**Registration on Vercel:** set `NEXT_PUBLIC_APP_URL` to your production URL (e.g. `https://your-app.vercel.app`). Without SMTP, keep `USE_MOCK_EMAIL=true` (default in `.env.example`) so new users are email-verified automatically and can sign in after signup. Set `REQUIRE_ADMIN_APPROVAL=true` only if you want manual approval (there is no admin approval UI yet).
+**Registration on Vercel:** set `NEXT_PUBLIC_APP_URL` to your production URL (e.g. `https://your-app.vercel.app`). Without SMTP, keep `USE_MOCK_EMAIL=true` (default in `.env.example`) so new users are email-verified automatically and can sign in after signup. Set `REQUIRE_ADMIN_APPROVAL=true` only if you want manual approval — approve users at `/admin/users`.
+
+### Google sign-in
+
+1. Create an OAuth 2.0 **Web application** in [Google Cloud Console](https://console.cloud.google.com/apis/credentials).
+2. Add **Authorized redirect URI**: `http://localhost:3000/api/auth/google/callback` (and your production URL, e.g. `https://your-app.vercel.app/api/auth/google/callback`).
+3. Set `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` in `.env`.
+4. Run `npx prisma migrate deploy` (adds `googleId` on users).
+5. Restart the dev server — **Sign in with Google** / **Sign up with Google** appear on login and signup.
+
+Google accounts use the same rules as email signup (admin approval, invite codes, first-user admin). Existing email accounts are linked when the Google email matches.
 
 ### Local setup
 

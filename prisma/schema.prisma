@@ -80,6 +80,7 @@ model User {
   email                String            @unique
   username             String            @unique
   passwordHash         String
+  googleId             String?           @unique
   role                 Role              @default(USER)
   status               UserStatus        @default(PENDING_APPROVAL)
   emailVerified        Boolean           @default(false)

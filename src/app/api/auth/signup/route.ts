@@ -153,6 +153,15 @@ export async function POST(req: Request) {
       error && typeof error === "object" && "code" in error
         ? String((error as { code: string }).code)
         : "";
+    if (prismaCode === "P1001") {
+      return NextResponse.json(
+        {
+          error:
+            "Cannot connect to the database. Start PostgreSQL (e.g. docker compose up -d) and check DATABASE_URL in .env.",
+        },
+        { status: 503 }
+      );
+    }
     if (prismaCode === "P2021") {
       return NextResponse.json(
         {

@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { ArrowLeft, Loader2, ShieldAlert } from "lucide-react";
 import MessageInput from "./message-input";
+import { usePusherChannel } from "@/hooks/usePusher";
 import Image from "next/image";
 
 interface Participant {
@@ -116,10 +117,19 @@ useEffect(() => {
   const interval = setInterval(() => {
     fetchMessages(true);
     markAsRead();
-  }, 3000);
+  }, 10000);
 
   return () => clearInterval(interval);
 }, [fetchConvoDetails, fetchMessages, markAsRead]);
+
+usePusherChannel(`private-conversation-${conversationId}`, "message:new", (payload) => {
+  const msg = payload as Message;
+  setMessages((prev) => {
+    if (prev.some((m) => m.id === msg.id)) return prev;
+    return [...prev, msg];
+  });
+  setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
+});
 
   // Send message
   const handleSendMessage = async (content: string) => {
@@ -132,7 +142,11 @@ useEffect(() => {
       });
       if (res.ok) {
         const data = await res.json();
-        setMessages((prev) => [...prev, data.message]);
+        const msg = data.message ?? data;
+        setMessages((prev) => {
+          if (prev.some((m) => m.id === msg.id)) return prev;
+          return [...prev, msg];
+        });
         setTimeout(() => {
           messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
         }, 50);

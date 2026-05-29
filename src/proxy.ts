@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { jwtVerify } from "jose";
+import { checkRateLimit } from "@/lib/rate-limit";
+import { withSecurityHeaders } from "@/lib/security-headers";
 
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || "super-secret-random-key-32-chars-at-least-1234-abcd"
@@ -10,14 +12,23 @@ export default async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
   const token = req.cookies.get("auth-token")?.value;
 
-  // Let public files, assets, api routes (except auth/session checks or data routes) pass through
+  // API routes: rate limit + security headers; auth enforced per-route
+  if (pathname.startsWith("/api/")) {
+    const limited = await checkRateLimit(req, {
+      prefix: pathname.startsWith("/api/auth") ? "auth" : "api",
+      limit: pathname.startsWith("/api/auth") ? 20 : 120,
+    });
+    if (limited) return withSecurityHeaders(limited);
+    return withSecurityHeaders(NextResponse.next());
+  }
+
+  // Static assets and uploads
   if (
     pathname.startsWith("/_next") ||
-    pathname.startsWith("/api/auth") ||
     pathname.includes("favicon.ico") ||
     pathname.startsWith("/uploads/")
   ) {
-    return NextResponse.next();
+    return withSecurityHeaders(NextResponse.next());
   }
 
   let userPayload: { userId: string; email: string; role: string } | null = null;
@@ -30,7 +41,7 @@ export default async function proxy(req: NextRequest) {
       // Token is invalid/expired
       const response = NextResponse.redirect(new URL("/login", req.url));
       response.cookies.delete("auth-token");
-      return response;
+      return withSecurityHeaders(response);
     }
   }
 
@@ -45,25 +56,24 @@ export default async function proxy(req: NextRequest) {
   if (isAuthRoute) {
     if (userPayload) {
       // User is already logged in, redirect to feed
-      return NextResponse.redirect(new URL("/feed", req.url));
+      return withSecurityHeaders(NextResponse.redirect(new URL("/feed", req.url)));
     }
-    return NextResponse.next();
+    return withSecurityHeaders(NextResponse.next());
   }
 
   // If user is not logged in and trying to access protected routes
   if (!userPayload) {
-    return NextResponse.redirect(new URL("/login", req.url));
+    return withSecurityHeaders(NextResponse.redirect(new URL("/login", req.url)));
   }
 
   // Admin routes
   if (pathname.startsWith("/admin")) {
     if (userPayload.role !== "ADMIN" && userPayload.role !== "MODERATOR") {
-      // Redirect unauthorized users to feed
-      return NextResponse.redirect(new URL("/feed", req.url));
+      return withSecurityHeaders(NextResponse.redirect(new URL("/feed", req.url)));
     }
   }
 
-  return NextResponse.next();
+  return withSecurityHeaders(NextResponse.next());
 }
 
 export const config = {

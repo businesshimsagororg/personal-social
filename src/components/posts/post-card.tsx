@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import ReportModal from "@/components/ReportModal";
 import Image from "next/image";
 import {
   Heart,
@@ -66,6 +67,7 @@ export default function PostCard({ post, currentUserId }: PostCardProps) {
   const [newCommentText, setNewCommentText] = useState("");
   const [replyToCommentId, setReplyToCommentId] = useState<string | null>(null);
   const [replyText, setReplyText] = useState("");
+  const [showReport, setShowReport] = useState(false);
 
   const handleLikeToggle = async () => {
     // Optimistic UI updates
@@ -301,9 +303,16 @@ export default function PostCard({ post, currentUserId }: PostCardProps) {
           </div>
         </div>
 
-        <button className="p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/40 transition">
-          <MoreHorizontal className="h-5 w-5" />
-        </button>
+        {currentUserId && currentUserId !== post.author.id && (
+          <button
+            type="button"
+            onClick={() => setShowReport(true)}
+            className="p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/40 transition"
+            title="Report post"
+          >
+            <MoreHorizontal className="h-5 w-5" />
+          </button>
+        )}
       </div>
 
       {/* Content */}
@@ -386,6 +395,14 @@ export default function PostCard({ post, currentUserId }: PostCardProps) {
             </div>
           )}
         </div>
+      )}
+
+      {showReport && (
+        <ReportModal
+          targetType="POST"
+          targetId={post.id}
+          onClose={() => setShowReport(false)}
+        />
       )}
     </article>
   );

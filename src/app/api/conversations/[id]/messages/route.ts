@@ -3,6 +3,8 @@ import { getSessionUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { messageCreateSchema } from "@/lib/validations";
 import { createNotification } from "@/lib/notifications";
+import { sanitizeText } from "@/lib/sanitize";
+import { triggerConversationEvent } from "@/lib/pusher";
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const currentUser = await getSessionUser();
@@ -138,7 +140,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       );
     }
 
-    const { content, mediaUrl } = result.data;
+    const { mediaUrl } = result.data;
+    const content = sanitizeText(result.data.content);
 
     // Determine message type
     let messageType: "TEXT" | "IMAGE" | "VIDEO" | "FILE" = "TEXT";
@@ -227,7 +230,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       },
     };
 
-    return NextResponse.json(formattedMessage, { status: 201 });
+    await triggerConversationEvent(conversationId, "message:new", formattedMessage);
+
+    return NextResponse.json({ message: formattedMessage }, { status: 201 });
   } catch (error) {
     console.error("Error sending message:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });

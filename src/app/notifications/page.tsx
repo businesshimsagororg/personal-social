@@ -4,12 +4,14 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import AppLayout from "@/components/layout/app-layout";
 import NotificationItem from "@/components/notifications/notification-item";
+import { usePusherChannel } from "@/hooks/usePusher";
 import { Bell, Check, Loader2, RefreshCw } from "lucide-react";
 
 export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [markingAll, setMarkingAll] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
   const router = useRouter();
 
   const fetchNotifications = async (silent = false) => {
@@ -28,15 +30,28 @@ export default function NotificationsPage() {
   };
 
   useEffect(() => {
+    fetch("/api/auth/me")
+      .then((r) => r.json())
+      .then((d) => d.user?.id && setUserId(d.user.id))
+      .catch(() => {});
+
     fetchNotifications();
 
-    // 30s poll for notifications list updates
-    const interval = setInterval(() => {
-      fetchNotifications(true);
-    }, 30000);
-
+    const interval = setInterval(() => fetchNotifications(true), 30000);
     return () => clearInterval(interval);
   }, []);
+
+  usePusherChannel(
+    userId ? `private-user-${userId}` : null,
+    "notification:new",
+    (payload) => {
+      const n = payload as (typeof notifications)[0];
+      setNotifications((prev) => {
+        if (prev.some((x) => x.id === n.id)) return prev;
+        return [n, ...prev];
+      });
+    }
+  );
 
   const handleMarkAllRead = async () => {
     setMarkingAll(true);

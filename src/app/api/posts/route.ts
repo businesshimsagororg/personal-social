@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
 import { postCreateSchema } from "@/lib/validations";
+import { sanitizeText } from "@/lib/sanitize";
 
 export async function POST(req: Request) {
   try {
@@ -20,7 +21,8 @@ export async function POST(req: Request) {
       );
     }
 
-    const { content, media, visibility } = result.data;
+    const { media, visibility } = result.data;
+    const content = sanitizeText(result.data.content);
 
     // Parse hashtags from content (e.g., #tech #welcome)
     const hashtagRegex = /#(\w+)/g;
@@ -133,7 +135,7 @@ export async function GET(req: Request) {
         ],
       },
       take: limit + 1, // Fetch an extra post to determine next cursor
-      cursor: cursor ? { id: cursor } : undefined,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
       orderBy: { createdAt: "desc" },
       include: {
         media: true,
