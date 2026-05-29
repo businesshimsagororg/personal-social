@@ -3,10 +3,15 @@ import { prisma } from "@/lib/prisma";
 import { comparePassword, loginUserSession } from "@/lib/auth";
 import { loginSchema } from "@/lib/validations";
 import { shouldSkipEmailVerification } from "@/lib/app-url";
-import { isPrismaConnectionError, DATABASE_UNAVAILABLE_MESSAGE } from "@/lib/db-errors";
+import { databaseErrorResponse, getDatabaseConfigError, isPrismaConnectionError } from "@/lib/db-errors";
 
 export async function POST(req: Request) {
   try {
+    const configError = getDatabaseConfigError();
+    if (configError) {
+      return NextResponse.json({ error: configError }, { status: 503 });
+    }
+
     const body = await req.json();
     const result = loginSchema.safeParse(body);
 
@@ -84,7 +89,7 @@ export async function POST(req: Request) {
   } catch (error) {
     console.error("Login error:", error);
     if (isPrismaConnectionError(error)) {
-      return NextResponse.json({ error: DATABASE_UNAVAILABLE_MESSAGE }, { status: 503 });
+      return NextResponse.json({ error: databaseErrorResponse() }, { status: 503 });
     }
     return NextResponse.json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }

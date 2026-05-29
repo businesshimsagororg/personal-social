@@ -9,13 +9,19 @@ import {
   shouldSkipEmailVerification,
 } from "@/lib/app-url";
 import {
-  DATABASE_UNAVAILABLE_MESSAGE,
+  databaseErrorResponse,
+  getDatabaseConfigError,
   isPrismaConnectionError,
 } from "@/lib/db-errors";
 import crypto from "crypto";
 
 export async function POST(req: Request) {
   try {
+    const configError = getDatabaseConfigError();
+    if (configError) {
+      return NextResponse.json({ error: configError }, { status: 503 });
+    }
+
     const body = await req.json();
     const result = signupSchema.safeParse(body);
 
@@ -159,7 +165,7 @@ export async function POST(req: Request) {
         ? String((error as { code: string }).code)
         : "";
     if (isPrismaConnectionError(error) || prismaCode === "P1001") {
-      return NextResponse.json({ error: DATABASE_UNAVAILABLE_MESSAGE }, { status: 503 });
+      return NextResponse.json({ error: databaseErrorResponse() }, { status: 503 });
     }
     if (prismaCode === "P2021") {
       return NextResponse.json(
