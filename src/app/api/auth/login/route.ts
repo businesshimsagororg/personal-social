@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { comparePassword, loginUserSession } from "@/lib/auth";
 import { loginSchema } from "@/lib/validations";
 import { shouldSkipEmailVerification } from "@/lib/app-url";
-import { databaseErrorResponse, getDatabaseConfigError, isPrismaConnectionError } from "@/lib/db-errors";
+import { databaseErrorResponse, getAuthErrorMessage, getDatabaseConfigError, isPrismaConnectionError } from "@/lib/db-errors";
 
 export async function POST(req: Request) {
   try {
@@ -30,6 +30,13 @@ export async function POST(req: Request) {
 
     if (!user) {
       return NextResponse.json({ error: "Invalid username/email or password" }, { status: 401 });
+    }
+
+    if (!user.passwordHash) {
+      return NextResponse.json(
+        { error: "This account uses Google sign-in. Use the Google button or reset your password." },
+        { status: 400 }
+      );
     }
 
     // Verify password
@@ -68,14 +75,18 @@ export async function POST(req: Request) {
       role: user.role,
     });
 
-    // Write audit log
-    await prisma.auditLog.create({
-      data: {
-        userId: user.id,
-        action: "USER_LOGIN",
-        ipAddress: req.headers.get("x-forwarded-for") || "unknown",
-      },
-    });
+    // Write audit log (non-blocking — login should succeed even if logging fails)
+    try {
+      await prisma.auditLog.create({
+        data: {
+          userId: user.id,
+          action: "USER_LOGIN",
+          ipAddress: req.headers.get("x-forwarded-for") || "unknown",
+        },
+      });
+    } catch (auditError) {
+      console.error("Login audit log error:", auditError);
+    }
 
     return NextResponse.json({
       message: "Logged in successfully",
@@ -88,9 +99,7 @@ export async function POST(req: Request) {
     });
   } catch (error) {
     console.error("Login error:", error);
-    if (isPrismaConnectionError(error)) {
-      return NextResponse.json({ error: databaseErrorResponse() }, { status: 503 });
-    }
-    return NextResponse.json({ error: "Something went wrong. Please try again." }, { status: 500 });
+    const status = isPrismaConnectionError(error) || getDatabaseConfigError() ? 503 : 500;
+    return NextResponse.json({ error: getAuthErrorMessage(error) }, { status });
   }
 }

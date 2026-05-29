@@ -23,9 +23,11 @@ import {
 
 interface AppLayoutProps {
   children: React.ReactNode;
+  /** Use full width for admin and other data-heavy views */
+  wide?: boolean;
 }
 
-export default function AppLayout({ children }: AppLayoutProps) {
+export default function AppLayout({ children, wide = false }: AppLayoutProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { theme, toggleTheme } = useTheme();
@@ -208,7 +210,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
               }`}
             >
               <Shield className="h-5 w-5" />
-              <span>Admin Moderation</span>
+              <span>Admin dashboard</span>
             </Link>
           )}
         </nav>
@@ -335,7 +337,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
                   }`}
                 >
                   <Shield className="h-5 w-5" />
-                  <span>Admin Panel</span>
+                  <span>Admin dashboard</span>
                 </Link>
               )}
             </nav>
@@ -377,7 +379,11 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
       {/* Main View Container */}
       <main className="flex-1 w-full min-h-0 flex flex-col overflow-y-auto">
-        <div className="max-w-4xl w-full mx-auto px-4 md:px-8 py-8 animate-fade-in">
+        <div
+          className={`w-full mx-auto px-4 md:px-8 py-8 animate-fade-in ${
+            wide ? "max-w-[1600px]" : "max-w-4xl"
+          }`}
+        >
           {children}
         </div>
       </main>

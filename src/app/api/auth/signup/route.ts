@@ -9,7 +9,7 @@ import {
   shouldSkipEmailVerification,
 } from "@/lib/app-url";
 import {
-  databaseErrorResponse,
+  getAuthErrorMessage,
   getDatabaseConfigError,
   isPrismaConnectionError,
 } from "@/lib/db-errors";
@@ -160,22 +160,8 @@ export async function POST(req: Request) {
     );
   } catch (error) {
     console.error("Signup error:", error);
-    const prismaCode =
-      error && typeof error === "object" && "code" in error
-        ? String((error as { code: string }).code)
-        : "";
-    if (isPrismaConnectionError(error) || prismaCode === "P1001") {
-      return NextResponse.json({ error: databaseErrorResponse() }, { status: 503 });
-    }
-    if (prismaCode === "P2021") {
-      return NextResponse.json(
-        {
-          error:
-            "Database tables are missing. Run migrations on the server (prisma migrate deploy) and try again.",
-        },
-        { status: 503 }
-      );
-    }
-    return NextResponse.json({ error: "Something went wrong. Please try again." }, { status: 500 });
+    const status =
+      isPrismaConnectionError(error) || getDatabaseConfigError() ? 503 : 500;
+    return NextResponse.json({ error: getAuthErrorMessage(error) }, { status });
   }
 }

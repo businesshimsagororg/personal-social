@@ -100,7 +100,7 @@ export async function GET(req: NextRequest) {
         action: "USER_LOGIN_GOOGLE",
         ipAddress: req.headers.get("x-forwarded-for") || "unknown",
       },
-    });
+    }).catch((auditError) => console.error("Google login audit log error:", auditError));
 
     return NextResponse.redirect(new URL("/feed", appUrl));
   } catch (error) {

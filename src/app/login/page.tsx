@@ -4,7 +4,7 @@ import React, { Suspense, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Eye, EyeOff, Lock, Mail, ShieldAlert, Sparkles } from "lucide-react";
-import GoogleSignInButton from "@/components/auth/GoogleSignInButton";
+import { apiErrorMessage, parseApiJson } from "@/lib/api-client";
 import AuthErrorBanner from "@/components/auth/AuthErrorBanner";
 
 export default function LoginPage() {
@@ -27,10 +27,14 @@ export default function LoginPage() {
         body: JSON.stringify({ usernameOrEmail, password }),
       });
 
-      const data = await res.json();
+      const data = await parseApiJson(res);
 
       if (!res.ok) {
-        throw new Error(data.error || "Login failed");
+        throw new Error(apiErrorMessage(data, "Login failed"));
+      }
+
+      if (!data) {
+        throw new Error("Server returned an invalid response. Try again or check deployment logs.");
       }
 
       router.push("/feed");

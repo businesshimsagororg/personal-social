@@ -8,12 +8,15 @@ export async function GET(req: NextRequest) {
   if (auth.error) return auth.error;
 
   const { searchParams } = new URL(req.url);
-  const status = (searchParams.get("status") || "PENDING_APPROVAL") as UserStatus;
+  const statusParam = searchParams.get("status") || "PENDING_APPROVAL";
   const cursor = searchParams.get("cursor") || undefined;
   const limit = Math.min(Math.max(parseInt(searchParams.get("limit") || "20"), 1), 50);
 
+  const where =
+    statusParam === "ALL" ? {} : { status: statusParam as UserStatus };
+
   const users = await prisma.user.findMany({
-    where: { status },
+    where,
     take: limit + 1,
     ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     orderBy: { createdAt: "desc" },

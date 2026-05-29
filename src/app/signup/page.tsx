@@ -4,7 +4,7 @@ import React, { Suspense, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Eye, EyeOff, KeyRound, Lock, Mail, ShieldAlert, Sparkles, User } from "lucide-react";
-import GoogleSignInButton from "@/components/auth/GoogleSignInButton";
+import { apiErrorMessage, parseApiJson } from "@/lib/api-client";
 import AuthErrorBanner from "@/components/auth/AuthErrorBanner";
 
 export default function SignupPage() {
@@ -35,27 +35,34 @@ export default function SignupPage() {
         body: JSON.stringify(payload),
       });
 
-      const data = await res.json();
+      const data = await parseApiJson(res);
 
       if (!res.ok) {
-        const fieldMessages = data.details
-          ? Object.values(data.details as Record<string, string[]>)
-              .flat()
-              .filter(Boolean)
-          : [];
+        const fieldMessages =
+          data?.details && typeof data.details === "object"
+            ? Object.values(data.details as Record<string, string[]>)
+                .flat()
+                .filter(Boolean)
+            : [];
         throw new Error(
           fieldMessages.length > 0
             ? fieldMessages.join(" ")
-            : data.error || "Registration failed"
+            : apiErrorMessage(data, "Registration failed")
         );
       }
 
+      if (!data) {
+        throw new Error("Server returned an invalid response. Try again or check deployment logs.");
+      }
+
       const canLoginNow =
-        data.emailVerified && data.status === "ACTIVE";
+        Boolean(data.emailVerified) && data.status === "ACTIVE";
+      const message =
+        typeof data.message === "string" ? data.message : "Account created.";
       setSuccess(
         canLoginNow
-          ? `${data.message || "Account created."} You can sign in now.`
-          : data.message || "Account registered successfully! Check your email."
+          ? `${message} You can sign in now.`
+          : message || "Account registered successfully! Check your email."
       );
       
       // Clear inputs

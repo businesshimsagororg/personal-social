@@ -19,9 +19,9 @@ interface AdminUser {
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<"PENDING_APPROVAL" | "ACTIVE" | "SUSPENDED" | "BANNED">(
-    "PENDING_APPROVAL"
-  );
+  const [filter, setFilter] = useState<
+    "ALL" | "PENDING_APPROVAL" | "ACTIVE" | "SUSPENDED" | "BANNED"
+  >("ALL");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
   const fetchUsers = useCallback(async () => {
@@ -69,16 +69,16 @@ export default function AdminUsersPage() {
 
   return (
     <AdminLayout>
-      <div className="space-y-6 max-w-3xl">
+      <div className="space-y-6 w-full max-w-4xl">
         <div>
           <h1 className="text-2xl font-bold">User management</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Approve new members or manage account status
+            Approve new members, change roles, or manage account status
           </p>
         </div>
 
         <div className="flex flex-wrap gap-2">
-          {(["PENDING_APPROVAL", "ACTIVE", "SUSPENDED", "BANNED"] as const).map((s) => (
+          {(["ALL", "PENDING_APPROVAL", "ACTIVE", "SUSPENDED", "BANNED"] as const).map((s) => (
             <button
               key={s}
               type="button"
@@ -89,7 +89,7 @@ export default function AdminUsersPage() {
                   : "border-border hover:bg-muted"
               }`}
             >
-              {s.replace("_", " ")}
+              {s === "ALL" ? "All users" : s.replace("_", " ")}
             </button>
           ))}
         </div>
@@ -114,7 +114,7 @@ export default function AdminUsersPage() {
                   </p>
                   <p className="text-xs text-muted-foreground">{u.email}</p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Joined {new Date(u.createdAt).toLocaleDateString()} · {u.role} ·{" "}
+                    Joined {new Date(u.createdAt).toLocaleDateString()} · {u.role} · {u.status} ·{" "}
                     {u.emailVerified ? "Email verified" : "Email pending"}
                   </p>
                 </div>
