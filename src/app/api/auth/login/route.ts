@@ -34,7 +34,7 @@ export async function POST(req: Request) {
 
     if (!user.passwordHash) {
       return NextResponse.json(
-        { error: "This account uses Google sign-in. Use the Google button or reset your password." },
+        { error: "This account has no password set. Use forgot password or contact an administrator." },
         { status: 400 }
       );
     }

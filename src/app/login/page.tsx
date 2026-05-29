@@ -6,7 +6,6 @@ import Link from "next/link";
 import { Eye, EyeOff, Lock, Mail, ShieldAlert, Sparkles } from "lucide-react";
 import { apiErrorMessage, parseApiJson } from "@/lib/api-client";
 import AuthErrorBanner from "@/components/auth/AuthErrorBanner";
-import GoogleSignInButton from "@/components/auth/GoogleSignInButton";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -81,19 +80,6 @@ export default function LoginPage() {
               </div>
             </div>
           )}
-
-          <div className="space-y-4 mb-6">
-            <GoogleSignInButton returnTo="login" label="Sign in with Google" />
-          </div>
-
-          <div className="relative mb-6">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-border" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">or continue with email</span>
-            </div>
-          </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
