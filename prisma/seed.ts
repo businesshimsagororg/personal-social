@@ -227,7 +227,7 @@ async function main() {
               size: 0,
             },
           ],
-        }
+        },
       visibility: "PUBLIC",
     },
   });
