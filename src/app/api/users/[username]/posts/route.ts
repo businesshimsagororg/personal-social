@@ -104,7 +104,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ username
     const formattedPosts = posts.map((post) => ({
       id: post.id,
       content: post.content,
-      mediaUrls: post.mediaUrls,
+      media: post.media,
       visibility: post.visibility,
       createdAt: post.createdAt,
       author: post.author,

@@ -313,10 +313,10 @@ export default function PostCard({ post, currentUserId }: PostCardProps) {
         </p>
 
         {/* Media Attachments */}
-        {post.mediaUrls.length > 0 && (
+        {post.media && post.media.length > 0 && (
           <div className="rounded-2xl overflow-hidden border border-border max-h-[400px]">
             <Image
-              src={post.mediaUrls[0]}
+              src={post.media[0].url}
               alt="Post attachment"
               width={800}
               height={450}
