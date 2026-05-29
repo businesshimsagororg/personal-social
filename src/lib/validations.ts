@@ -33,7 +33,11 @@ export const resetPasswordSchema = z.object({
 // Social Schemas
 export const postCreateSchema = z.object({
   content: z.string().min(1, "Post content cannot be empty").max(2000, "Post is too long"),
-  mediaUrls: z.array(z.string().url()).optional().default([]),
+media: z.array(z.object({
+  url: z.string().url(),
+  type: z.enum(["IMAGE", "VIDEO"]).default("IMAGE"),
+  size: z.number().int().nonnegative().default(0),
+})).optional().default([]),
   visibility: z.enum(["PUBLIC", "FOLLOWERS", "MUTUALS", "PRIVATE"]).default("PUBLIC"),
 });
 

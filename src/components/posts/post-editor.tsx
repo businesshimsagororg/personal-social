@@ -22,13 +22,13 @@ export default function PostEditor({ onPostCreated }: PostEditorProps) {
     setLoading(true);
     setError("");
 
-    const mediaUrls = mediaUrl.trim() ? [mediaUrl.trim()] : [];
+    const media = mediaUrl.trim() ? [{ url: mediaUrl.trim(), type: "IMAGE", size: 0 }] : [];
 
     try {
       const res = await fetch("/api/posts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content, mediaUrls, visibility }),
+        body: JSON.stringify({ content, media, visibility }),
       });
 
       const data = await res.json();

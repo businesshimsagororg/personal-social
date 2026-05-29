@@ -219,7 +219,15 @@ async function main() {
     data: {
       authorId: bob.id,
       content: "Shot this gorgeous misty sunrise in the mountains earlier today. Nature is the ultimate therapist. #photography",
-      mediaUrls: ["https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=800"],
+      media: {
+          create: [
+            {
+              url: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=800",
+              type: "IMAGE",
+              size: 0,
+            },
+          ],
+        }
       visibility: "PUBLIC",
     },
   });

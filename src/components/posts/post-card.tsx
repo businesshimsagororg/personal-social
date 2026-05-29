@@ -32,7 +32,7 @@ interface Comment {
 interface Post {
   id: string;
   content: string;
-  mediaUrls: string[];
+  media: { url: string; type: string; size: number }[];
   visibility: "PUBLIC" | "FOLLOWERS" | "MUTUALS" | "PRIVATE";
   createdAt: string;
   author: {

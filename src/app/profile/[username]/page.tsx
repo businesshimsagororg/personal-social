@@ -167,7 +167,7 @@ export default function ProfilePage() {
   };
 
   const filteredPosts = activeTab === "media" 
-    ? posts.filter(p => p.mediaUrls.length > 0)
+    ? posts.filter(p => p.media && p.media.length > 0)
     : posts;
 
   return (

@@ -20,7 +20,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const { content, mediaUrls, visibility } = result.data;
+    const { content, media, visibility } = result.data;
 
     // Parse hashtags from content (e.g., #tech #welcome)
     const hashtagRegex = /#(\w+)/g;
@@ -39,7 +39,7 @@ export async function POST(req: Request) {
         data: {
           authorId: user.id,
           content,
-          mediaUrls,
+          media,
           visibility,
         },
       });
@@ -136,6 +136,7 @@ export async function GET(req: Request) {
       cursor: cursor ? { id: cursor } : undefined,
       orderBy: { createdAt: "desc" },
       include: {
+        media: true,
         author: {
           select: {
             id: true,
@@ -172,7 +173,7 @@ export async function GET(req: Request) {
     const formattedPosts = posts.map((post) => ({
       id: post.id,
       content: post.content,
-      mediaUrls: post.mediaUrls,
+      media: post.media,
       visibility: post.visibility,
       createdAt: post.createdAt,
       author: post.author,
