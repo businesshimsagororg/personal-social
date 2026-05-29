@@ -1,14 +1,16 @@
-import type { NextConfig } from "next";
-
 /**
- * Next.js configuration for the production‑ready social platform.
+ * Next.js configuration for the production-ready social platform.
  * - Enables external image domains (CDN for uploaded media).
  * - Server Actions are enabled by default in Next.js 16.
  *
  * Note: Public env vars are accessed directly via process.env.NEXT_PUBLIC_*
  * (publicRuntimeConfig was removed in Next.js 16).
  */
-const nextConfig: NextConfig = {
+
+/**
+ * @type {import('next').NextConfig}
+ */
+const nextConfig = {
   // Enable React Strict Mode for development safety
   reactStrictMode: true,
 
@@ -30,5 +32,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
-
+module.exports = nextConfig;
