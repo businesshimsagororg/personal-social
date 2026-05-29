@@ -1,5 +1,11 @@
 import { z } from "zod";
 
+/** Turn Zod field errors into a single user-facing message. */
+export function formatValidationErrors(fieldErrors: Record<string, string[] | undefined>): string {
+  const messages = Object.entries(fieldErrors).flatMap(([, errors]) => errors ?? []);
+  return messages.join(" ") || "Invalid inputs";
+}
+
 // Authentication schemas
 export const signupSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -11,7 +17,7 @@ export const signupSchema = z.object({
   password: z.string().min(8, "Password must be at least 8 characters"),
   inviteCode: z
     .string()
-    .optional()
+    .nullish()
     .transform((val) => (val?.trim() ? val.trim() : undefined)),
 });
 

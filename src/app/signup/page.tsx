@@ -25,16 +25,29 @@ export default function SignupPage() {
     setSuccess("");
 
     try {
+      const payload: Record<string, string> = { email, username, password };
+      const trimmedInvite = inviteCode.trim();
+      if (trimmedInvite) payload.inviteCode = trimmedInvite;
+
       const res = await fetch("/api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, username, password, inviteCode }),
+        body: JSON.stringify(payload),
       });
 
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.error || "Registration failed");
+        const fieldMessages = data.details
+          ? Object.values(data.details as Record<string, string[]>)
+              .flat()
+              .filter(Boolean)
+          : [];
+        throw new Error(
+          fieldMessages.length > 0
+            ? fieldMessages.join(" ")
+            : data.error || "Registration failed"
+        );
       }
 
       const canLoginNow =
@@ -160,6 +173,9 @@ export default function SignupPage() {
                   <input
                     type="text"
                     required
+                    minLength={3}
+                    maxLength={20}
+                    pattern="[a-zA-Z0-9_]+"
                     placeholder="username (letters, numbers, _)"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
@@ -179,6 +195,7 @@ export default function SignupPage() {
                   <input
                     type={showPassword ? "text" : "password"}
                     required
+                    minLength={8}
                     placeholder="At least 8 characters"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}

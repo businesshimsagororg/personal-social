@@ -1,13 +1,17 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/lib/auth";
-import { signupSchema } from "@/lib/validations";
+import { formatValidationErrors, signupSchema } from "@/lib/validations";
 import { sendEmail, getEmailVerificationTemplate } from "@/lib/email";
 import {
   getAppUrl,
   requiresAdminApproval,
   shouldSkipEmailVerification,
 } from "@/lib/app-url";
+import {
+  DATABASE_UNAVAILABLE_MESSAGE,
+  isPrismaConnectionError,
+} from "@/lib/db-errors";
 import crypto from "crypto";
 
 export async function POST(req: Request) {
@@ -16,8 +20,9 @@ export async function POST(req: Request) {
     const result = signupSchema.safeParse(body);
 
     if (!result.success) {
+      const fieldErrors = result.error.flatten().fieldErrors;
       return NextResponse.json(
-        { error: "Invalid inputs", details: result.error.flatten().fieldErrors },
+        { error: formatValidationErrors(fieldErrors), details: fieldErrors },
         { status: 400 }
       );
     }
@@ -153,14 +158,8 @@ export async function POST(req: Request) {
       error && typeof error === "object" && "code" in error
         ? String((error as { code: string }).code)
         : "";
-    if (prismaCode === "P1001") {
-      return NextResponse.json(
-        {
-          error:
-            "Cannot connect to the database. Start PostgreSQL (e.g. docker compose up -d) and check DATABASE_URL in .env.",
-        },
-        { status: 503 }
-      );
+    if (isPrismaConnectionError(error) || prismaCode === "P1001") {
+      return NextResponse.json({ error: DATABASE_UNAVAILABLE_MESSAGE }, { status: 503 });
     }
     if (prismaCode === "P2021") {
       return NextResponse.json(
