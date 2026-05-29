@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Eye, EyeOff, KeyRound, Lock, Mail, ShieldAlert, Sparkles, User } from "lucide-react";
 import { apiErrorMessage, parseApiJson } from "@/lib/api-client";
 import AuthErrorBanner from "@/components/auth/AuthErrorBanner";
+import GoogleSignInButton from "@/components/auth/GoogleSignInButton";
 
 export default function SignupPage() {
   const router = useRouter();
